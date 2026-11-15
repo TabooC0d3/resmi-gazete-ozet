@@ -52,8 +52,8 @@ gönderilmez ve uygulamayı kaldırdığınızda silinir:
 - Bildirim Radarı'na yazdığınız takip kelimeleri,
 - Geçmiş listesi için kullanılan teknik bilgiler (özetlerin tarihleri ve boyutları).
 
-"Kayıtları yedekle"yi seçtiğinizde kaydedilen maddeler, notlar ve Bildirim Radarı kelimeleri tek
-bir dosyaya yazılır; dosya yalnızca sizin seçtiğiniz yere (ör. telefonun Dosyalar uygulaması ya da
+"Kayıtları yedekle"yi seçtiğinizde kaydedilen maddeler, notlar, Bildirim Radarı kelimeleri, yürürlük
+hatırlatıcıları ve ayarlar (tema, yazı boyutu, okuma hızı, süzgeç tercihi) tek bir dosyaya yazılır; dosya yalnızca sizin seçtiğiniz yere (ör. telefonun Dosyalar uygulaması ya da
 Google Drive) kaydedilir ve uygulama onu kendisi hiçbir yere göndermez. Ana ekran widget'ı yalnızca
 telefondaki özetin bilgilerini gösterir.
 
@@ -70,7 +70,7 @@ hiçbir kişisel veriyi işlemez.
 Özetlerin "Atamalar" bölümünde, Resmî Gazete'de kamuya açık olarak yayımlanan atama, görevden
 alma ve görev yeri değişikliği kararlarındaki görevli adları ve görevleri, kararlardaki yazımıyla
 aktarılır. Genel müdür yardımcısı ve üstü görevlerde (kurum başkanı, rektör, vali, büyükelçi
-gibi) ve vali yardımcısı ile il müdüründe, kararda önceki görevlinin adı yoksa önceki görevli
+gibi) ve vali yardımcısı, il müdürü ile kaymakamda, kararda önceki görevlinin adı yoksa önceki görevli
 Resmî Gazete arşivinden ya da kurumların
 resmî siteleri ve haber ajansları gibi kamuya açık kaynaklardan araştırılır; bu durumda kaynağın
 bağlantısı adın yanında gösterilir. Kişiler hakkında görev bilgisi dışında hiçbir bilgi (kimlik
@@ -153,8 +153,8 @@ anywhere and are deleted when you uninstall the app:
 - The keywords you enter in the "Bildirim Radarı" (notification radar),
 - Technical data used for the history list (dates and sizes of the summaries).
 
-When you choose "Kayıtları yedekle" (back up), your saved items, notes and radar keywords are
-written to a single file; the file is saved only where you choose (e.g. the phone's Files app or
+When you choose "Kayıtları yedekle" (back up), your saved items, notes, radar keywords, effective-date
+reminders and settings (theme, text size, reading speed, filter preference) are written to a single file; the file is saved only where you choose (e.g. the phone's Files app or
 Google Drive) and the app never sends it anywhere by itself. The home screen widget shows only
 information from the summary stored on the phone.
 
@@ -171,8 +171,8 @@ process any personal data of its users.
 The "Atamalar" (appointments) section of the summaries reproduces the names and positions of
 officials as written in the appointment, dismissal and reassignment decisions publicly published
 in the Official Gazette. For positions at deputy director general level and above (such as
-heads of institutions, rectors, governors and ambassadors), and for deputy governors and
-provincial directors, if a decision does not name the
+heads of institutions, rectors, governors and ambassadors), and for deputy governors,
+provincial directors and district governors (kaymakam), if a decision does not name the
 previous holder, the previous holder is researched in the Official Gazette archive or in public
 sources such as official institutional websites and news agencies; the source link is then shown
 next to the name. No information other than the official position (ID numbers, contact details,
