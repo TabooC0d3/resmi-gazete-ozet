@@ -393,6 +393,26 @@ gösteren kartlar olarak gösterir.
      içinde kararın ifadesi: `(görevden alındı)`, `(başka göreve atandı)`, `(emekliye ayrıldı)`
      gibi. Kararda önceki görevli yazmıyorsa `Belirtilmemiş` yaz; üst düzey görevlerde 5.
      maddedeki araştırma bu hücreyi sonradan doldurur.
+   - **Karar içi çapraz eşleştirme (toplu kararlar).** Mülki idare amirleri, emniyet ve bakanlık
+     kararnameleri gibi toplu kararlarda bir kişinin yeni görevi yazılırken o andaki görevi de
+     yazılır ("... Kaymakamlığına, ... Kaymakamı Ad SOYAD" gibi). Tabloyu yazmadan önce bu
+     sayıdaki bütün atama kararlarını birlikte tara: bir göreve (ör. X Kaymakamlığına ya da Y İl
+     Müdürlüğüne) yeni biri atanmışsa ve aynı kararın (ya da aynı sayıdaki başka bir atama
+     kararının) başka bir satırında o görevi yürüten kişinin ("X Kaymakamı Ad SOYAD") başka bir
+     göreve atandığı ya da görevden alındığı yazıyorsa, önceki görevli zaten kararda yazmaktadır.
+     `Eski` hücresine o kişinin adını ve parantez içinde nereye gittiğini yaz:
+     `Ad SOYAD (Mersin Vali Yardımcılığına atandı)`; ifade uzunsa `(başka göreve atandı)`. Kaynak
+     hücresine `Bu karar` yaz. Aynı görev için görevden alma ve atama ayrı satırlarda ya da ayrı
+     kararlarda geçiyorsa tabloda tek satırda birleştir. Eşleştirme koşulları:
+     - Kurum ya da yer ile unvan tam olarak aynı olmalı, il adı dahil ("Bursa Yenişehir
+       Kaymakamı" ile "Mersin Yenişehir Kaymakamlığı" aynı görev değildir).
+     - Yalnızca tek kişinin yürüttüğü görevlerde uygula: vali, kaymakam, il ve ilçe müdürü, il
+       emniyet müdürü, genel müdür, kurum başkanı, rektör, büyükelçi, adı açıkça yazan bir
+       birimin başkanı ya da müdürü gibi. Aynı unvanı birden çok kişinin taşıdığı görevlerde
+       (vali yardımcısı, genel müdür yardımcısı, bakan yardımcısı, kurul üyesi, müşavir, müfettiş
+       gibi) karar açıkça "...'ın yerine" demiyorsa eşleştirme yapma.
+     - Aynı görev için birden çok aday çıkıyorsa ya da emin değilsen eşleştirme yapma; hücre
+       `Belirtilmemiş` kalsın. Ad yine yalnızca karar metninden, harfi harfine alınır.
    - `Eski görevlinin kaynağı`: `Eski` adı karardan alındıysa `Bu karar`; araştırmayla
      bulunduysa kaynağın bağlantısı (5. madde); araştırıldı ama bulunamadıysa
      `Araştırıldı, bulunamadı`; araştırma kapsamı dışındaysa ya da kararda önceki görevli yoksa `—`.
@@ -413,6 +433,10 @@ gösteren kartlar olarak gösterir.
    temsilci. Daire başkanı, ilçe müdürü, şube müdürü, il müdür yardımcısı ve benzeri görevleri
    araştırma. Vali yardımcısı, il müdürü ve kaymakamda kurumun resmî sitesi (valilik, kaymakamlık
    ya da il müdürlüğü, `gov.tr`) en güvenilir kaynaktır; yerel haber tek başına yeterli değildir.
+   - **Önce karar içinde ara:** Web aramasına geçmeden önce 2. maddedeki karar içi çapraz
+     eşleştirmeyi yap (özet yazılırken, ilk yayından önce). Önceki görevlisi bu sayıdaki
+     kararlardan bulunan görevler araştırma listesine girmez; 25 görevlik araştırma hakkını
+     yalnızca kararlarda adı hiç geçmeyen görevler için harca.
    - **Sıra:** Önce özetin tamamını yaz ve `gorev/yayinla.py` ile yayınla (araştırma günün
      özetini geciktirmesin). Sonra araştır, tabloyu güncelle ve `python3 gorev/yayinla.py <TARIH>`
      komutunu yeniden çalıştır (aynı dala ikinci gönderim; iş akışı birleştirir).
