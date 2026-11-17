@@ -47,8 +47,8 @@ gönderilmez ve uygulamayı kaldırdığınızda silinir:
 - İndirilen günlük özetler ve arama dizini,
 - "Kaydet" ile işaretlediğiniz maddeler ve bu maddelere yazdığınız kişisel notlar,
 - Yürürlük takviminde kurduğunuz hatırlatıcılar,
-- Tema (Açık / Koyu / Sistem), yazı boyutu, sesli okuma hızı ve "Sadece Personel" süzgeci
-  tercihleriniz,
+- Tema (Açık / Koyu / Sistem), yazı boyutu, sesli okuma hızı ve açılış süzgeci ("Sadece
+  Personel", "Sadece Yönetmelikler" gibi) tercihleriniz,
 - Bildirim Radarı'na yazdığınız takip kelimeleri,
 - Geçmiş listesi için kullanılan teknik bilgiler (özetlerin tarihleri ve boyutları).
 
@@ -150,8 +150,8 @@ anywhere and are deleted when you uninstall the app:
 - Downloaded daily summaries and the search index,
 - Items you mark with "Kaydet" (save) and the personal notes you add to them,
 - The reminders you set in the effective-date calendar,
-- Your theme (Light / Dark / System), text size, text-to-speech speed and "Sadece Personel"
-  (personnel only) filter choices,
+- Your theme (Light / Dark / System), text size, text-to-speech speed and start filter
+  ("Sadece Personel", "Sadece Yönetmelikler" and similar) choices,
 - The keywords you enter in the "Bildirim Radarı" (notification radar),
 - Technical data used for the history list (dates and sizes of the summaries).
 
