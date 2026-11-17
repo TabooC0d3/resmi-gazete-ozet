@@ -1,6 +1,6 @@
 # Özet RG: Gizlilik Politikası / Privacy Policy
 
-Son güncelleme / Last updated: 14 Kasım 2026 / 14 November 2026
+Son güncelleme / Last updated: 17 Kasım 2026 / 17 November 2026
 
 Geliştirici / Developer: Birol ABANUZOĞLU · İletişim / Contact: <birolabanuzoglu@gmail.com>
 
@@ -86,9 +86,11 @@ kendisidir. Bir düzeltme talebiniz varsa aşağıdaki adrese yazabilirsiniz.
 - **Takvime ekleme ve paylaşma:** Yalnızca siz dokunduğunuzda, telefonunuzun takvim ya da
   paylaşım ekranı açılır. Uygulama takviminizi okumaz; paylaşımı siz seçtiğiniz uygulamayla
   yaparsınız.
-- **PDF bilgi notu:** "PDF Paylaş"a dokunduğunuzda bilgi notu cihazda bir PDF dosyasına
-  çevrilir ve yalnızca paylaşım ekranında seçtiğiniz uygulamaya, okuma izniyle verilir. Dosya
-  uygulamanın geçici alanında durur; uygulama onu başka hiçbir yere göndermez.
+- **PDF bilgi notu, atama listesi ve bülten:** "PDF Paylaş"a dokunduğunuzda bilgi notu, atama
+  listesi ya da haftalık / aylık bülten cihazda bir PDF dosyasına çevrilir ve yalnızca paylaşım
+  ekranında seçtiğiniz uygulamaya, okuma izniyle verilir. Dosya uygulamanın geçici alanında durur;
+  uygulama onu başka hiçbir yere göndermez. Bülten ve istatistikler telefondaki özetlerden
+  telefonda hesaplanır.
 - **AI'ya Sor:** Yalnızca siz bir soru seçip ya da yazıp düğmeye dokunduğunuzda, sorunuz ve
   ilgili maddenin (ya da günün) özeti tek bir metin olarak panoya kopyalanır ve sizin
   seçtiğiniz yerde açılır: "ChatGPT'de Aç" bu metni `chatgpt.com` adresinde (tarayıcıda ya da
@@ -188,9 +190,11 @@ authoritative. You can request a correction at the address below.
   (e.g. Google, Samsung); the app sends it nowhere else.
 - **Add to calendar and share:** only when you tap them, your phone's calendar or share sheet
   opens. The app does not read your calendar; you share with the app you choose.
-- **PDF information note:** when you tap "PDF Paylaş", the note is turned into a PDF file on the
-  device and handed, with read-only access, only to the app you pick in the share sheet. The
-  file stays in the app's temporary storage; the app sends it nowhere else.
+- **PDF information note, appointment list and bulletin:** when you tap "PDF Paylaş", the note,
+  the appointment list or the weekly / monthly bulletin is turned into a PDF file on the device and
+  handed, with read-only access, only to the app you pick in the share sheet. The file stays in
+  the app's temporary storage; the app sends it nowhere else. The bulletin and statistics are
+  computed on the phone from the summaries stored there.
 - **AI'ya Sor (ask AI):** only when you pick or type a question and tap a button, your question
   and the summary of the related item (or day) are copied to the clipboard as one text and
   opened where you choose: "ChatGPT'de Aç" opens it at `chatgpt.com` (in the browser or the
