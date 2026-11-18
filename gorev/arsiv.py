@@ -24,6 +24,7 @@ olarak gorunur. Elle bakildiktan sonra durum.json'dan silinirse yeniden denenir.
 import datetime
 import json
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +38,10 @@ ARALIK_SON = "20261110"  # gunluk ozetler 11 Kasim 2026'da basladi; arsiv bunun 
 DENEME_SINIRI = 5
 DURUM = os.path.join(KOK, "arsiv", "durum.json")
 TR = datetime.timezone(datetime.timedelta(hours=3))
+# Ayni anda birden cok arsiv calismasi olabilir (18 Kasim'da kullanici 81 gunun hemen yazilmasini
+# istedi). Her secimden once main'deki yayin ve deneme kayitlarina bakilir; baska bir calismanin
+# son MESGUL_DAKIKA icinde sectigi (ve henuz yayimlamadigi) gun atlanir.
+MESGUL_DAKIKA = 40
 
 
 def bugun():
@@ -95,15 +100,57 @@ def gonder(mesaj):
         print("UYARI deneme kaydi gonderilemedi (" + hedef + "); yayinla.py ile birlikte gidecek")
 
 
+def ana_dal():
+    """origin/main'deki yayimlanmis gunler ve deneme kayitlari (es zamanli calismalar icin).
+
+    Yalnizca okunur (fetch); oturumun dali main'le birlestirilmez. Ag yoksa ya da yerel denemede
+    (ARSIV_GONDERME=0) bos doner.
+    """
+    if os.environ.get("ARSIV_GONDERME") == "0":
+        return set(), {}
+    if yayinla.git("fetch", "-q", "origin", "main", check=False).returncode != 0:
+        return set(), {}
+    liste = yayinla.git("ls-tree", "--name-only", "origin/main", "ozetler/", check=False, capture=True).stdout
+    yayinda = set(re.findall(r"ozetler/(\d{8})\.html", liste))
+    r = yayinla.git("show", "origin/main:arsiv/durum.json", check=False, capture=True)
+    try:
+        uzak = json.loads(r.stdout).get("gunler", {}) if r.returncode == 0 else {}
+    except ValueError:
+        uzak = {}
+    return yayinda, uzak
+
+
+def birlestir(gunler_, uzak):
+    """Iki deneme kaydini birlestirir: her gun icin daha yeni (son, deneme) olan kalir."""
+    for t, k in uzak.items():
+        y = gunler_.get(t)
+        if y is None or (k.get("son", ""), k.get("deneme", 0)) > (y.get("son", ""), y.get("deneme", 0)):
+            gunler_[t] = k
+
+
+def mesgul(kayit, simdi):
+    """Gunu son MESGUL_DAKIKA icinde baska bir calisma secmis ve hata kaydetmemisse True."""
+    if kayit.get("hata") or not kayit.get("son"):
+        return False
+    try:
+        son = datetime.datetime.strptime(kayit["son"], "%Y-%m-%d %H:%M").replace(tzinfo=TR)
+    except ValueError:
+        return False
+    return simdi - son < datetime.timedelta(minutes=MESGUL_DAKIKA)
+
+
 def sonraki():
     if not ozet_var(bugun()):
         print("GUNLUK_BEKLENIYOR", bugun())
         return
+    yayinda, uzak = ana_dal()
     veri = durum_oku()
-    kalan = [t for t in gunler() if not ozet_var(t)]
+    birlestir(veri["gunler"], uzak)
+    simdi = datetime.datetime.now(TR)
+    kalan = [t for t in gunler() if not ozet_var(t) and t not in yayinda]
     for t in kalan:
         kayit = veri["gunler"].get(t, {})
-        if kayit.get("deneme", 0) >= DENEME_SINIRI:
+        if kayit.get("deneme", 0) >= DENEME_SINIRI or mesgul(kayit, simdi):
             continue
         kayit["deneme"] = kayit.get("deneme", 0) + 1
         kayit["son"] = datetime.datetime.now(TR).strftime("%Y-%m-%d %H:%M")
@@ -130,15 +177,17 @@ def hata(tarih, neden):
 
 
 def rapor():
+    yayinda, uzak = ana_dal()
     veri = durum_oku()
+    birlestir(veri["gunler"], uzak)
     tum = list(gunler())
-    yazilan = [t for t in tum if ozet_var(t)]
+    yazilan = [t for t in tum if ozet_var(t) or t in yayinda]
     print("ARALIK", ARALIK_BAS, ARALIK_SON, len(tum), "gun")
     print("YAZILAN", len(yazilan))
     print("KALAN", len(tum) - len(yazilan))
     for t in tum:
         kayit = veri["gunler"].get(t, {})
-        if not ozet_var(t) and kayit.get("deneme", 0) >= DENEME_SINIRI:
+        if t not in yazilan and kayit.get("deneme", 0) >= DENEME_SINIRI:
             print("SORUNLU", t, kayit.get("hata", "deneme siniri (%d)" % DENEME_SINIRI))
 
 

@@ -3,9 +3,10 @@
 #
 # Guvenlik: daldaki degisiklikler yalnizca ozet dosyalari (ozetler/YYYYMMDD.html), index.json,
 # arama.json, aylik arama parcalari (arama/YYYYMM.json) ve arsiv deneme kaydi (arsiv/durum.json)
-# olabilir. Dal baska bir dosyaya dokunmussa, ozet silmisse, main'de zaten bulunan 7 gunden eski
-# bir ozeti degistirmisse ya da 10'dan cok ozet getirmisse is hata verir ve hicbir sey islenmez;
-# boylece otomatik gorevler betikleri, talimati, bu is akisini ve eski ozetleri degistiremez.
+# olabilir. Dal baska bir dosyaya dokunmussa, ozet silmisse ya da 31'den cok ozet getirmisse is
+# hata verir ve hicbir sey islenmez. main'de zaten bulunan 7 gunden eski bir ozetin farkli surumu
+# alinmaz (eski ozet korunur), dalin geri kalani islenir; boylece otomatik gorevler betikleri,
+# talimati, bu is akisini ve eski ozetleri degistiremez. Deneme kaydi (arsiv/durum.json) birlestirilir.
 #
 # 2.3 (2026-11-18): daldan yalnizca ozetler ve arsiv/durum.json alinir; index.json, arama.json ve
 # arama/ parcalari main'de, main'deki gorev/yayinla.py ile yeniden uretilir. Boylece gunluk ozet ve
@@ -79,19 +80,44 @@ jobs:
               echo "::error::Dal ozet ya da arsiv dosyasi silmis; islenmedi:"
               printf '%s\n' "${silinen}"
               durum=1
-            elif [ -n "${korunan}" ]; then
-              echo "::error::Dal main'deki 7 gunden eski ozetleri degistirmis; islenmedi:${korunan}"
-              durum=1
-            elif [ "${ozet_sayisi}" -gt 10 ]; then
-              echo "::error::Dal ${ozet_sayisi} ozet getiriyor (en cok 10); islenmedi."
+            elif [ "${ozet_sayisi}" -gt 31 ]; then
+              echo "::error::Dal ${ozet_sayisi} ozet getiriyor (en cok 31); islenmedi."
               durum=1
             else
+              # main'deki 7 gunden eski bir ozeti farkli icerikle getiren dosya alinmaz (eski ozet korunur),
+              # dalin geri kalani islenir. Es zamanli arsiv calismalari ayni gunu yazarsa ilk yayimlanan kalir.
+              if [ -n "${korunan}" ]; then
+                echo "::warning::main'deki 7 gunden eski ozetlerin farkli surumu alinmadi:${korunan}"
+                for f in ${korunan}; do
+                  alinacak="$(printf '%s\n' "${alinacak}" | grep -vx "${f}" || true)"
+                done
+              fi
               tarihler="$(printf '%s\n' "${alinacak}" | sed -n 's#^ozetler/\([0-9]\{8\}\)\.html$#\1#p' | tr '\n' ' ')"
               islendi=0
               for deneme in 1 2 3; do
                 git reset --quiet --hard origin/main
                 if [ -n "${alinacak}" ]; then
                   git checkout --quiet "origin/${DAL}" -- ${alinacak}
+                fi
+                # Deneme kaydi daldakiyle degistirilmez, birlestirilir (es zamanli calismalarin kayitlari kaybolmasin)
+                if printf '%s\n' "${alinacak}" | grep -qx 'arsiv/durum.json'; then
+                  python3 - "origin/${DAL}" <<'PY'
+          import json, subprocess, sys
+          def oku(ref):
+              r = subprocess.run(["git", "show", ref + ":arsiv/durum.json"], capture_output=True, text=True)
+              try:
+                  return json.loads(r.stdout).get("gunler", {}) if r.returncode == 0 else {}
+              except ValueError:
+                  return {}
+          ana, dal = oku("origin/main"), oku(sys.argv[1])
+          for t, k in dal.items():
+              a = ana.get(t)
+              if a is None or (k.get("son", ""), k.get("deneme", 0)) >= (a.get("son", ""), a.get("deneme", 0)):
+                  ana[t] = k
+          with open("arsiv/durum.json", "w", encoding="utf-8", newline="\n") as f:
+              json.dump({"gunler": dict(sorted(ana.items(), reverse=True))}, f, ensure_ascii=False, indent=1, sort_keys=True)
+              f.write("\n")
+          PY
                 fi
                 # Liste ve arama dizini main'deki betikle yeniden uretilir
                 python3 -c 'import sys; sys.path.insert(0, "gorev"); import yayinla; yayinla.index_yaz()'
