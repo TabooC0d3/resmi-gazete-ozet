@@ -41,7 +41,7 @@ telefonunuzun tarayıcısında (ya da ilgili uygulamada) açılır.
 
 ### Web sitesi
 
-Özetler <https://wolframargon.github.io/resmi-gazete-ozet/> adresindeki web sitesinde de
+Özetler <https://birolabanuzoglu.github.io/resmi-gazete-ozet/> adresindeki web sitesinde de
 yayımlanır. Site GitHub Pages'te barındırılır; hesap, çerez, reklam, analiz ya da ziyaretçi
 takibi kullanmaz. Sitenin tuttuğu tek bilgi seçtiğiniz renk temasıdır (Sistem, Açık ya da Koyu);
 bu tercih yalnızca tarayıcınızda (`localStorage`) saklanır. Site özetleri ve arama dizinini
@@ -126,7 +126,7 @@ Uygulama çocuklara yönelik değildir ve hiçbir yaştan kullanıcıdan veri to
 ### Değişiklikler ve iletişim
 
 Bu politika değişirse güncel hâli bu sayfada yayınlanır. Sorularınız için:
-<birolabanuzoglu@gmail.com> ya da <https://github.com/wolframargon/resmi-gazete-ozet/issues>
+<birolabanuzoglu@gmail.com> ya da <https://github.com/birolabanuzoglu/resmi-gazete-ozet/issues>
 
 ---
 
@@ -164,7 +164,7 @@ ChatGPT) button, the link opens in your phone's browser (or in the related app).
 
 ### Website
 
-The summaries are also published on the website <https://wolframargon.github.io/resmi-gazete-ozet/>.
+The summaries are also published on the website <https://birolabanuzoglu.github.io/resmi-gazete-ozet/>.
 The site is hosted on GitHub Pages and uses no accounts, cookies, ads, analytics or visitor
 tracking. The only thing it stores is your colour theme choice (System, Light or Dark), kept only
 in your browser (`localStorage`). The site reads the summaries and the search index from the same
@@ -252,4 +252,4 @@ The app is not directed at children and collects no data from users of any age.
 ### Changes and contact
 
 If this policy changes, the current version will be published on this page. Questions:
-<birolabanuzoglu@gmail.com> or <https://github.com/wolframargon/resmi-gazete-ozet/issues>
+<birolabanuzoglu@gmail.com> or <https://github.com/birolabanuzoglu/resmi-gazete-ozet/issues>

@@ -2,7 +2,7 @@
 
 T.C. Resmi Gazete'nin gunluk sayilarinin yapay zeka ile hazirlanan ozetleri. Ozetler hata icerebilir; esas olan Resmi Gazete'nin kendisidir: https://www.resmigazete.gov.tr
 
-Özetleri web sitesinde ücretsiz okuyabilirsiniz: https://wolframargon.github.io/resmi-gazete-ozet/ (sitenin dosyaları `docs/` klasöründe).
+Özetleri web sitesinde ücretsiz okuyabilirsiniz: https://birolabanuzoglu.github.io/resmi-gazete-ozet/ (sitenin dosyaları `docs/` klasöründe).
 
 ## Telif ve kullanım
 

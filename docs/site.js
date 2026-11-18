@@ -5,7 +5,7 @@
  */
 "use strict";
 
-const RAW = "https://raw.githubusercontent.com/wolframargon/resmi-gazete-ozet/main/";
+const RAW = "https://raw.githubusercontent.com/birolabanuzoglu/resmi-gazete-ozet/main/";
 const AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const GUNLER = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
 // Arşivin hedef aralığı (uygulamadaki ARCHIVE_FIRST / ARCHIVE_LAST ile aynı)
@@ -845,8 +845,8 @@ function showAbout() {
     link("#", "📤", "Siteyi arkadaşlarınla paylaş", ` data-paylas`) +
     link("https://www.linkedin.com/in/birolabanuzoglu", "💼", "LinkedIn: linkedin.com/in/birolabanuzoglu", ` target="_blank" rel="noopener"`) +
     link("mailto:birolabanuzoglu@gmail.com?subject=%C3%96zet%20RG%20Geri%20Bildirim", "✉️", "Bana yazın: birolabanuzoglu@gmail.com") +
-    link("https://github.com/wolframargon/resmi-gazete-ozet/blob/main/GIZLILIK.md", "🛡️", "Gizlilik ve KVKK", ` target="_blank" rel="noopener"`) +
-    link("https://github.com/wolframargon/resmi-gazete-ozet#telif-ve-kullan%C4%B1m", "©️", "Telif ve kullanım", ` target="_blank" rel="noopener"`) +
+    link("https://github.com/birolabanuzoglu/resmi-gazete-ozet/blob/main/GIZLILIK.md", "🛡️", "Gizlilik ve KVKK", ` target="_blank" rel="noopener"`) +
+    link("https://github.com/birolabanuzoglu/resmi-gazete-ozet#telif-ve-kullan%C4%B1m", "©️", "Telif ve kullanım", ` target="_blank" rel="noopener"`) +
     `</section><p class="note ab-foot">Özet RG · Web sitesi · © 2026 · Simgeler: Material Icons (Apache 2.0)</p>`;
   $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault();
