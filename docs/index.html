@@ -16,8 +16,10 @@
 <meta property="og:image" content="https://wolframargon.github.io/resmi-gazete-ozet/og.png">
 <meta property="og:locale" content="tr_TR">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="app.css">
-<link rel="stylesheet" href="site.css">
+<!-- Sürüm eki: Pages dosyaları 10 dk önbellekte tutar; site.js ya da CSS değişince ?v= artırılır ki
+     tarayıcı yeni sayfayı eski betikle birleştirmesin -->
+<link rel="stylesheet" href="app.css?v=2">
+<link rel="stylesheet" href="site.css?v=2">
 <script>
   // Tema, sayfa çizilmeden önce uygulanır (açık sayfanın bir an parlamaması için)
   (function () {
@@ -27,7 +29,7 @@
     document.documentElement.className = d ? "dark" : "light";
   })();
 </script>
-<script src="site.js" defer></script>
+<script src="site.js?v=2" defer></script>
 </head>
 <body>
 <div class="band"></div>
