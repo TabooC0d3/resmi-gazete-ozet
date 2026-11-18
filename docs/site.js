@@ -17,6 +17,7 @@ const P = {
   doc: "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
   star: "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
   list: "M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z",
+  bulb: "M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z",
   pie: "M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z",
   spark: "M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z",
   bank: "M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z",
@@ -817,6 +818,50 @@ function renderDays(q, tur) {
   box.innerHTML = s;
 }
 
+// ------------------------------------------------------------------ hakkında (uygulamadaki Hakkında ile aynı)
+
+function showAbout() {
+  const t = theme();
+  const link = (href, e, label, attrs = "") =>
+    `<a href="${esc(href)}"${attrs}><span class="e">${e}</span><span class="l">${label}</span><span class="go">›</span></a>`;
+  $app.innerHTML = `<a class="back" href="./" data-nav>${ic("arrow")}Özete dön</a>` +
+    `<section class="card dev"><div class="avatar photo"><img src="gelistirici.jpg" alt="Birol ABANUZOĞLU" width="88" height="88"></div>` +
+    `<h1>Birol ABANUZOĞLU</h1><p class="role">Ziraat Mühendisi · Özet RG'nin geliştiricisi</p><div class="tags">` +
+    ["Kamu Yönetimi", "Mevzuat", "İnsan Kaynakları", "Tarım Ekonomisi", "Dijital Dönüşüm", "Ankara"]
+      .map((x, i) => `<span class="${i % 2 ? "tg2" : "tg1"}">${x}</span>`).join("") + `</div></section>` +
+    `<section class="why"><div class="why-k">NEDEN ÖZET RG?</div><blockquote>“Resmî Gazete’yi okumak işimin bir parçası. ` +
+    `Özet RG’yi, aynı ihtiyacı duyan herkes için o sabah okumasını birkaç dakikaya indirmek üzere yaptım.”</blockquote></section>` +
+    `<h2 class="free"><span class="ic how-ic">${ic("bulb")}</span>Nasıl çalışır?</h2><ol class="how">` +
+    `<li>Resmî Gazete gece yarısından sonra yayımlanır; metinler <a href="https://www.resmigazete.gov.tr" target="_blank" rel="noopener">resmigazete.gov.tr</a> adresinden alınır.</li>` +
+    `<li>Her başlık kısa ve sade bir özete dönüştürülür, konusuna göre etiketlenir; atamalar ve eski–yeni karşılaştırmaları ayrıca gösterilir.</li>` +
+    `<li>Özet her gece bu siteye ve Özet RG Android uygulamasına gelir; asıl metne tek dokunuşla geçersiniz.</li></ol>` +
+    `<div class="trans-box ab-warn">${ic("warn")}<div>Resmî bir kamu sitesi değildir. Özetler bilgilendirme amaçlıdır; ` +
+    `bağlayıcı olan, Resmî Gazete'de yayımlanan asıl metindir.</div></div>` +
+    `<section class="card sec ab-theme"><h2><span class="ic">${ic("moon")}</span>Görünüm</h2><div class="seg">` +
+    [["sistem", "🌓 Sistem"], ["acik", "☀️ Açık"], ["koyu", "🌙 Koyu"]]
+      .map(([k, l]) => `<a href="#" data-tema="${k}"${t === k ? ` class="on"` : ""}>${l}</a>`).join("") +
+    `</div><p class="hint">Sistem: telefonunuzun ya da bilgisayarınızın ayarını izler.</p></section>` +
+    `<section class="card links">` +
+    link("#", "📤", "Siteyi arkadaşlarınla paylaş", ` data-paylas`) +
+    link("https://www.linkedin.com/in/birolabanuzoglu", "💼", "LinkedIn: linkedin.com/in/birolabanuzoglu", ` target="_blank" rel="noopener"`) +
+    link("mailto:birolabanuzoglu@gmail.com?subject=%C3%96zet%20RG%20Geri%20Bildirim", "✉️", "Bana yazın: birolabanuzoglu@gmail.com") +
+    link("https://github.com/wolframargon/resmi-gazete-ozet/blob/main/GIZLILIK.md", "🛡️", "Gizlilik ve KVKK", ` target="_blank" rel="noopener"`) +
+    link("https://github.com/wolframargon/resmi-gazete-ozet#telif-ve-kullan%C4%B1m", "©️", "Telif ve kullanım", ` target="_blank" rel="noopener"`) +
+    `</section><p class="note ab-foot">Özet RG · Web sitesi · © 2026 · Simgeler: Material Icons (Apache 2.0)</p>`;
+  $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    setTheme(a.dataset.tema);
+    $app.querySelectorAll("[data-tema]").forEach(x => x.classList.toggle("on", x === a));
+  }));
+  $app.querySelector("[data-paylas]").addEventListener("click", async e => {
+    e.preventDefault();
+    const url = new URL("./", location.href).href;
+    if (navigator.share) { try { await navigator.share({ title: "Özet RG · Resmî Gazete'nin günlük özeti", url }); } catch (x) { /* vazgeçildi */ } return; }
+    try { await navigator.clipboard.writeText(url); toast("Bağlantı kopyalandı"); } catch (x) { prompt("Bağlantı:", url); }
+  });
+  setMeta("Hakkında | Özet RG", "Özet RG'yi kim, neden ve nasıl hazırlıyor.", "?hakkinda");
+}
+
 // ------------------------------------------------------------------ genel
 
 function loading(text) {
@@ -842,6 +887,8 @@ async function route() {
   lastSearch = location.search;
   if (window.speechSynthesis) speechSynthesis.cancel();
   const q = new URLSearchParams(location.search);
+  $app.classList.toggle("about", q.has("hakkinda"));
+  if (q.has("hakkinda")) { showAbout(); return; }
   try { await loadIndex(); } catch (e) { return showError(e, route); }
   if (q.has("gun")) await showDay(normKey(q.get("gun")), (q.get("ara") || "").trim());
   else if (q.has("gecmis") || q.has("ara") || q.has("tur")) await showList((q.get("ara") || "").trim(), q.get("tur") || "");
@@ -863,31 +910,21 @@ document.addEventListener("click", e => {
 // Sayfa içi bağlantılar (#g-1 gibi) da popstate üretir; aynı sayfaysa yeniden çizilmez
 window.addEventListener("popstate", () => { if (location.search !== lastSearch) route(); });
 
-// Tema: Sistem → Açık → Koyu
-const THEMES = ["sistem", "acik", "koyu"];
+// Tema: Sistem, Açık ya da Koyu (Hakkında'daki seçici; tercih yalnızca tarayıcıda saklanır)
+function theme() {
+  try { return localStorage.getItem("tema") || "sistem"; } catch (e) { return "sistem"; }
+}
 function applyTheme() {
-  let t = "sistem";
-  try { t = localStorage.getItem("tema") || "sistem"; } catch (e) { /* gizli sekme */ }
+  const t = theme();
   const dark = t === "koyu" || (t === "sistem" && matchMedia("(prefers-color-scheme: dark)").matches);
   document.documentElement.classList.toggle("dark", dark);
   document.documentElement.classList.toggle("light", !dark);
-  const b = document.getElementById("tema");
-  if (b) {
-    b.innerHTML = ic(t === "koyu" ? "moon" : t === "acik" ? "sun" : "auto");
-    b.title = `Tema: ${t === "koyu" ? "Koyu" : t === "acik" ? "Açık" : "Sistem"}`;
-  }
   document.querySelector('meta[name="theme-color"]').setAttribute("content", dark ? "#5E1012" : "#B71C1C");
 }
-document.getElementById("tema").addEventListener("click", () => {
-  let t = "sistem";
-  try { t = localStorage.getItem("tema") || "sistem"; } catch (e) { /* */ }
-  const next = THEMES[(THEMES.indexOf(t) + 1) % THEMES.length];
-  try { localStorage.setItem("tema", next); } catch (e) { /* */ }
+function setTheme(t) {
+  try { localStorage.setItem("tema", t); } catch (e) { /* gizli sekme */ }
   applyTheme();
-  toast(`Tema: ${next === "koyu" ? "Koyu" : next === "acik" ? "Açık" : "Sistem"}`);
-  // Halka grafiğin renkleri temaya göre yazılır
-  if (document.querySelector(".donut")) { const y = scrollY; route().then(() => scrollTo(0, y)); }
-});
+}
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
 applyTheme();
 route();
