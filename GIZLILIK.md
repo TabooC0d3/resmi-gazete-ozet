@@ -39,6 +39,18 @@ Bir maddenin tam metnini, Resmî Gazete'yi, LinkedIn sayfasını, "tüm arşivde
 (bir arama motorunda açılır) ya da "ChatGPT'de Aç" düğmesini kullandığınızda bağlantı
 telefonunuzun tarayıcısında (ya da ilgili uygulamada) açılır.
 
+### Web sitesi
+
+Özetler <https://wolframargon.github.io/resmi-gazete-ozet/> adresindeki web sitesinde de
+yayımlanır. Site GitHub Pages'te barındırılır; hesap, çerez, reklam, analiz ya da ziyaretçi
+takibi kullanmaz. Sitenin tuttuğu tek bilgi seçtiğiniz renk temasıdır (Sistem, Açık ya da Koyu);
+bu tercih yalnızca tarayıcınızda (`localStorage`) saklanır. Site özetleri ve arama dizinini
+uygulamayla aynı adresten (`raw.githubusercontent.com`) okur; sayfayı açtığınızda IP adresiniz ve
+tarayıcı bilgileriniz GitHub tarafından teknik olarak görülebilir (GitHub Gizlilik Bildirimi
+geçerlidir). Arama yalnızca tarayıcınızda yapılır, aranan kelime hiçbir yere gönderilmez.
+"Dinle" düğmesi tarayıcınızın sesli okuma özelliğini kullanır; bazı tarayıcılarda okunan metin
+(yalnızca özet) tarayıcı üreticisinin sunucusunda seslendirilir.
+
 ### Cihazda tutulan bilgiler
 
 Aşağıdakiler yalnızca sizin cihazınızda, uygulamanın özel alanında tutulur; hiçbir yere
@@ -80,6 +92,10 @@ kendisidir. Bir düzeltme talebiniz varsa aşağıdaki adrese yazabilirsiniz.
 2020'den bu yana yayımlanmış sayıların özetleri (arşiv) de aynı biçimde, sonradan hazırlanır.
 Arşivde önceki görevli araştırılmaz; adlar yalnızca kararlardaki yazımıyla yer alır. Bir arşiv
 özetinde adınızın yer almasını istemiyorsanız aşağıdaki adrese yazın; adınız o özetten kaldırılır.
+
+Özetler web sitesinde de yayımlandığı için bu adlar arama motorlarının sonuçlarında görünebilir.
+Düzeltme ve ad kaldırma talepleri web sitesi için de geçerlidir; özetten kaldırılan ad sitede de
+görünmez (arama motorlarının eski kopyası kendi güncelleme sürelerine bağlıdır).
 
 ### İzinler ve cihaz özellikleri
 
@@ -146,6 +162,18 @@ When you choose to open the full text of an item, the Official Gazette, the Link
 "search the whole archive" option (opens in a search engine) or the "ChatGPT'de Aç" (open in
 ChatGPT) button, the link opens in your phone's browser (or in the related app).
 
+### Website
+
+The summaries are also published on the website <https://wolframargon.github.io/resmi-gazete-ozet/>.
+The site is hosted on GitHub Pages and uses no accounts, cookies, ads, analytics or visitor
+tracking. The only thing it stores is your colour theme choice (System, Light or Dark), kept only
+in your browser (`localStorage`). The site reads the summaries and the search index from the same
+address as the app (`raw.githubusercontent.com`); when you open a page, your IP address and
+browser details are technically visible to GitHub (the GitHub General Privacy Statement applies).
+Search runs entirely in your browser; your search words are not sent anywhere. The "Dinle"
+(listen) button uses your browser's speech feature; in some browsers the text read aloud (the
+summary only) is synthesised on the browser vendor's servers.
+
 ### Data kept on the device
 
 The following are kept only on your device, in the app's private storage; they are never sent
@@ -189,6 +217,11 @@ Summaries of issues published since 2020 (the archive) are prepared in the same 
 retrospectively. In the archive the previous holder is not researched; names appear only as
 written in the decisions. If you do not want your name to appear in an archive summary, write to
 the address below and it will be removed from that summary.
+
+Because the summaries are also published on the website, these names may appear in search engine
+results. Correction and name removal requests apply to the website as well; a name removed from a
+summary also disappears from the site (search engines' cached copies depend on their own refresh
+schedules).
 
 ### Permissions and device features
 

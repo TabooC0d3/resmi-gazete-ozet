@@ -1,0 +1,135 @@
+/* Özet RG web sitesine özgü parçalar. Özet sayfasının görünümü app.css'te (uygulamadaki page.css'in kopyası). */
+
+/* Üst bölüm: kırmızı bant, logo ve düğmeler */
+.band{height:232px}
+.site-top{position:relative;z-index:2;max-width:640px;margin:0 auto;padding:16px 14px 8px;display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:11px;color:#fff;min-width:0}
+.brand img{flex:none;width:44px;height:44px;border-radius:14px;background:#fff;
+  box-shadow:0 0 0 2px rgba(255,255,255,.22),0 6px 14px rgba(0,0,0,.18)}
+.brand small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.2em;opacity:.82;line-height:1.2}
+.brand b{display:block;font-size:21px;font-weight:800;line-height:1.15;letter-spacing:-.01em}
+.tb{margin-left:auto;display:flex;align-items:center;gap:7px}
+.tbtn{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px 0 11px;border:0;border-radius:99px;color:#fff;
+  font:inherit;font-size:13.5px;font-weight:800;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.32);
+  cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tbtn:hover{background:rgba(255,255,255,.2)}
+.tbtn svg.i{font-size:19px}
+.tbtn.round{width:38px;padding:0;justify-content:center}
+@media (max-width:440px){
+  .tbtn .lbl{display:none}
+  .tbtn{width:38px;padding:0;justify-content:center}
+  .brand b{font-size:19px}
+}
+main{padding-top:6px}
+
+/* Kapak kartında paylaş düğmesi */
+.hero{position:relative}
+.hero-txt{padding-right:34px}
+.share{position:absolute;top:14px;right:14px;width:36px;height:36px;border:0;border-radius:12px;display:grid;place-items:center;
+  color:var(--brand);background:var(--brand-t);cursor:pointer}
+.share svg.i{font-size:18px}
+
+/* Masaüstünde fareyle gezinme */
+summary{cursor:pointer}
+.cta:hover,.stat:hover,.daynav a:hover,.gs:hover,.act:hover,a.ek:hover,.hero-ata:hover,.fchip:hover,.yr:hover{filter:brightness(.96)}
+html.dark .cta:hover,html.dark .stat:hover,html.dark .daynav a:hover,html.dark .gs:hover{filter:brightness(1.12)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.item h4,.hl li>b:first-child{scroll-margin-top:70px}
+
+/* Atamalar: üst düzey sayısı */
+.ata-sum{display:inline-block;margin:0 0 8px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:800;color:#7A5200;background:#FFF0C2}
+html.dark .ata-sum{color:#FFD36B;background:#3A3015}
+
+/* Yükleniyor, boş ve hata durumları */
+.ld{display:flex;flex-direction:column;align-items:center;gap:14px;padding:64px 0;color:#fff;font-weight:700}
+.ld i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:14px 8px 12px}
+.empty b{display:block;font-size:17px;font-weight:800;margin-bottom:6px}
+.empty p{color:var(--ink2);font-size:14px}
+.retry{border:0;border-radius:99px;padding:9px 18px;font:inherit;font-weight:800;color:#fff;background:var(--brand);cursor:pointer}
+.err{font-size:11.5px;color:var(--mut);margin-top:10px}
+.src-note{text-align:center;margin:18px 10px 4px}
+
+/* Aramadan gelinen günün üstündeki şerit ve sayfadaki eşleşmeler */
+.hitbar{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 14px;margin-bottom:10px}
+.hitbar>svg.i{font-size:20px;color:var(--brand)}
+.hitbar>span{flex:1;min-width:0;line-height:1.25}
+.hitbar b{display:block;font-size:14px}
+.hitbar small{display:block;font-size:12px;color:var(--mut);font-weight:600}
+.hitbar a{flex:none;font-size:12.5px;font-weight:800;color:var(--brand);background:var(--brand-t);border-radius:99px;padding:6px 12px}
+.hitbar a.x{padding:6px;display:grid;place-items:center}
+.hitbar a.x svg.i{font-size:16px}
+mark.hit{background:#FFB74D;box-shadow:2px 0 0 #FFB74D,-2px 0 0 #FFB74D}
+html.dark mark.hit{background:#8A4B00;color:#FFE0B2;box-shadow:2px 0 0 #8A4B00,-2px 0 0 #8A4B00}
+
+/* Geçmiş: arama, süzgeçler, arşiv ilerlemesi */
+.lst{padding:16px 16px 14px}
+.lst h1{margin:0;font-size:22px;font-weight:800;line-height:1.2}
+.lst-sub{margin:3px 0 12px;font-size:13px;color:var(--mut);font-weight:600}
+.srch{display:flex;align-items:center;gap:8px;height:50px;padding:0 6px 0 14px;border-radius:99px;background:var(--bg);
+  box-shadow:inset 0 0 0 1.5px var(--line)}
+.srch:focus-within{box-shadow:inset 0 0 0 2px var(--brand)}
+.srch>svg.i{font-size:21px;color:var(--mut)}
+.srch input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:15px}
+.srch input::-webkit-search-cancel-button{cursor:pointer}
+.srch button{flex:none;height:38px;padding:0 18px;border:0;border-radius:99px;color:#fff;font:inherit;font-size:13.5px;font-weight:800;
+  background:linear-gradient(135deg,#D23A32,#B71C1C 60%,#8E1318);box-shadow:0 3px 9px rgba(183,28,28,.28);cursor:pointer}
+.lst-chips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.fchip{position:relative;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:99px;font-size:13px;
+  font-weight:800;color:var(--brand-d);background:var(--brand-t);box-shadow:inset 0 0 0 1px rgba(183,28,28,.16);cursor:pointer}
+.fchip.on{color:#fff;background:#4A4440;box-shadow:none}
+html.dark .fchip.on{color:#1F1A17;background:#E6DED8}
+.fchip svg.i{font-size:16px}
+.fchip.date input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.arsiv-bar{padding:11px 14px 12px;border-radius:16px;background:var(--violet-t);box-shadow:inset 0 0 0 1px #E4D7FB}
+.arsiv-bar>div{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;font-size:13.5px;color:var(--violet);font-weight:700}
+.arsiv-bar>div span:last-child{color:var(--mut)}
+.arsiv-bar i{display:block;height:7px;margin-top:9px;border-radius:9px;background:rgba(109,40,217,.13);overflow:hidden}
+.arsiv-bar s{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#A78BFA,#6D28D9)}
+html.dark .arsiv-bar{box-shadow:inset 0 0 0 1px #3D2F5C}
+html.dark .arsiv-bar i{background:rgba(196,167,255,.14)}
+.years{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.yr{display:inline-flex;align-items:center;height:30px;padding:0 13px;border-radius:99px;font-size:12px;font-weight:800;
+  color:var(--violet);background:var(--violet-t);box-shadow:inset 0 0 0 1px #DCCBFB}
+html.dark .yr{box-shadow:inset 0 0 0 1px #3D2F5C}
+.res{margin:16px 6px 4px;font-size:14px;color:var(--ink2)}
+.web{display:flex;align-items:center;gap:12px;padding:14px 16px;margin:10px 0;color:var(--ink)}
+.web>svg.i:first-child{font-size:22px;color:var(--blue)}
+.web>svg.i:last-child{font-size:22px;color:var(--mut)}
+.web span{flex:1;min-width:0}
+.web b{display:block;font-size:14.5px}
+.web small{display:block;color:var(--mut);font-size:12px;font-weight:600}
+
+/* Günlerin listesi: aylara bölünmüş satırlar */
+.mblk{content-visibility:auto;contain-intrinsic-size:auto 900px}
+.mon{display:flex;align-items:center;gap:8px;margin:20px 6px 9px;font-size:15px;font-weight:800;color:var(--ink)}
+.mon svg.i{font-size:19px;color:var(--brand)}
+.mon span{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--mut)}
+.day{display:flex;align-items:center;gap:13px;padding:12px;margin-bottom:8px;color:var(--ink);transition:transform .12s}
+.day:hover{transform:translateY(-1px)}
+.dcal{flex:none;width:52px;border-radius:12px;overflow:hidden;text-align:center;background:#fff;
+  box-shadow:0 0 0 1px var(--line),0 3px 8px rgba(60,30,10,.10)}
+.dcal i{display:block;font-style:normal;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#fff;
+  background:linear-gradient(180deg,#C62828,#A31515);padding:4px 0 3px}
+.dcal b{display:block;font-size:21px;font-weight:800;line-height:1.3;padding:2px 0 3px}
+.day.arc .dcal i{background:linear-gradient(180deg,#7C3AED,#5B21B6)}
+html.dark .dcal{background:#262A30}
+.dtx{flex:1;min-width:0}
+.dtx b{display:block;font-size:15.5px;font-weight:800;line-height:1.3}
+.dtx small{display:block;margin-top:1px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.dtx .pv{display:block;margin-top:2px;font-size:13.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day>svg.i{flex:none;font-size:22px;color:var(--mut)}
+
+/* Alt bilgi */
+.foot{max-width:640px;margin:0 auto;padding:4px 20px 40px;text-align:center;font-size:12.5px;line-height:1.55;color:var(--mut)}
+.foot .links{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;margin-bottom:10px}
+.foot .links a{color:var(--ink2);font-weight:800}
+.foot p{margin:0 0 6px}
+
+/* Kısa bildirim */
+.toast{position:fixed;left:50%;bottom:24px;z-index:50;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  padding:10px 18px;border-radius:99px;background:#2B2724;color:#fff;font-size:14px;font-weight:700;
+  box-shadow:0 8px 20px rgba(0,0,0,.25);transition:opacity .2s,transform .2s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+html.dark .toast{background:#E8EAED;color:#121417}
