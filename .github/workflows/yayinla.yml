@@ -1,9 +1,15 @@
-# Bulut gorevinin "claude/..." dalina gonderdigi gunluk ozeti main dalina birlestirir.
+# Bulut rutinlerinin (gunluk ozet ve arsiv) "claude/..." dalina gonderdigi ozetleri main dalina isler.
 # Bulut oturumlari dogrudan main'e gonderemedigi icin bu ara adim gerekir.
 #
-# Guvenlik: yalnizca ozet dosyalari (ozetler/YYYYMMDD.html), index.json, arama.json ve aylik arama
-# parcalari (arama/YYYYMM.json, 2.2) degismisse birlestirilir. Dal baska bir dosyaya dokunmussa is hata verir ve hicbir sey yayinlanmaz;
-# boylece otomatik gorev betikleri, talimati ya da bu is akisini degistiremez.
+# Guvenlik: daldaki degisiklikler yalnizca ozet dosyalari (ozetler/YYYYMMDD.html), index.json,
+# arama.json, aylik arama parcalari (arama/YYYYMM.json) ve arsiv deneme kaydi (arsiv/durum.json)
+# olabilir. Dal baska bir dosyaya dokunmussa, ozet silmisse, main'de zaten bulunan 7 gunden eski
+# bir ozeti degistirmisse ya da 10'dan cok ozet getirmisse is hata verir ve hicbir sey islenmez;
+# boylece otomatik gorevler betikleri, talimati, bu is akisini ve eski ozetleri degistiremez.
+#
+# 2.3 (2026-11-18): daldan yalnizca ozetler ve arsiv/durum.json alinir; index.json, arama.json ve
+# arama/ parcalari main'de, main'deki gorev/yayinla.py ile yeniden uretilir. Boylece gunluk ozet ve
+# arsiv ayni anda yayimlasa bile tek satirlik index.json'da birlestirme catismasi olmaz.
 name: Ozeti yayinla
 
 on:
@@ -21,22 +27,23 @@ concurrency:
 jobs:
   birlestir:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - name: Dali main'e birlestir
+      - name: Ozetleri main'e isle
         env:
           GH_TOKEN: ${{ github.token }}
           DAL: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          git clone --quiet "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" depo
+          # DEPO_URL yalnizca yerel denemede verilir; GitHub'da bos kalir
+          git clone --quiet "${DEPO_URL:-https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git}" depo
           cd depo
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Dal, ayni dala yapilan onceki bir gonderimin isinde birlestirilip silinmis olabilir
+          # Dal, ayni dala yapilan onceki bir gonderimin isinde islenip silinmis olabilir
           # (ornegin rutin once dunu, sonra bugunu yayinladiysa); o zaman yapilacak is kalmamistir.
           if ! git fetch --quiet origin "refs/heads/${DAL}:refs/remotes/origin/${DAL}"; then
-            echo "Dal artik yok; onceki is birlestirmis."
+            echo "Dal artik yok; onceki is islemis."
             exit 0
           fi
           birlesen="$(git rev-parse "origin/${DAL}")"
@@ -44,27 +51,73 @@ jobs:
           durum=0
           degisen="$(git diff --name-only "origin/main...origin/${DAL}")"
           if [ -z "${degisen}" ]; then
-            echo "Birlestirilecek degisiklik yok."
+            echo "Islenecek degisiklik yok."
           else
             echo "Degisen dosyalar:"
             printf '%s\n' "${degisen}"
-            izinsiz="$(printf '%s\n' "${degisen}" | grep -Ev '^(index\.json|arama\.json|arama/[0-9]{6}\.json|ozetler/[0-9]{8}\.html)$' || true)"
+            izinsiz="$(printf '%s\n' "${degisen}" | grep -Ev '^(index\.json|arama\.json|arama/[0-9]{6}\.json|ozetler/[0-9]{8}\.html|arsiv/durum\.json)$' || true)"
+            silinen="$(git diff --name-only --diff-filter=D "origin/main...origin/${DAL}" | grep -E '^(ozetler|arsiv)/' || true)"
+            alinacak="$(printf '%s\n' "${degisen}" | grep -E '^(ozetler/[0-9]{8}\.html|arsiv/durum\.json)$' || true)"
+            ozet_sayisi="$(printf '%s\n' "${alinacak}" | grep -c '^ozetler/' || true)"
+            # main'de zaten bulunan ve 7 gunden eski ozetler korunur
+            esik="$(python3 -c 'import datetime as d; print((d.datetime.now(d.timezone.utc) + d.timedelta(hours=3) - d.timedelta(days=7)).strftime("%Y%m%d"))')"
+            korunan=""
+            for f in $(printf '%s\n' "${alinacak}" | grep '^ozetler/' || true); do
+              t="${f:8:8}"
+              if [ "${t}" -lt "${esik}" ] && git cat-file -e "origin/main:${f}" 2>/dev/null; then
+                korunan="${korunan} ${f}"
+              fi
+            done
             if [ -n "${izinsiz}" ]; then
-              echo "::error::Izin verilmeyen dosyalar degismis; birlestirilmedi:"
+              echo "::error::Izin verilmeyen dosyalar degismis; islenmedi:"
               printf '%s\n' "${izinsiz}"
               durum=1
-            elif git merge --no-edit "origin/${DAL}"; then
-              git push --quiet origin main
-              echo "main dalina birlestirildi."
-            else
-              echo "::error::Birlestirme catismasi; yayinlanmadi."
-              git merge --abort || true
+            elif [ -n "${silinen}" ]; then
+              echo "::error::Dal ozet ya da arsiv dosyasi silmis; islenmedi:"
+              printf '%s\n' "${silinen}"
               durum=1
+            elif [ -n "${korunan}" ]; then
+              echo "::error::Dal main'deki 7 gunden eski ozetleri degistirmis; islenmedi:${korunan}"
+              durum=1
+            elif [ "${ozet_sayisi}" -gt 10 ]; then
+              echo "::error::Dal ${ozet_sayisi} ozet getiriyor (en cok 10); islenmedi."
+              durum=1
+            else
+              tarihler="$(printf '%s\n' "${alinacak}" | sed -n 's#^ozetler/\([0-9]\{8\}\)\.html$#\1#p' | tr '\n' ' ')"
+              islendi=0
+              for deneme in 1 2 3; do
+                git reset --quiet --hard origin/main
+                if [ -n "${alinacak}" ]; then
+                  git checkout --quiet "origin/${DAL}" -- ${alinacak}
+                fi
+                # Liste ve arama dizini main'deki betikle yeniden uretilir
+                python3 -c 'import sys; sys.path.insert(0, "gorev"); import yayinla; yayinla.index_yaz()'
+                yollar="ozetler index.json arama.json arama"
+                if [ -d arsiv ]; then yollar="${yollar} arsiv"; fi
+                git add -A -- ${yollar}
+                if git diff --cached --quiet; then
+                  echo "Degisiklik yok (zaten islenmis)."
+                  islendi=1
+                  break
+                fi
+                git commit --quiet -m "Ozet ${tarihler:-arsiv durumu }(${DAL})"
+                if git push --quiet origin HEAD:main; then
+                  echo "main'e islendi: ${tarihler:-arsiv durumu}"
+                  islendi=1
+                  break
+                fi
+                echo "main bu arada degismis; yeniden aliniyor (deneme ${deneme})."
+                git fetch --quiet origin main
+              done
+              if [ "${islendi}" -ne 1 ]; then
+                echo "::error::main'e gonderilemedi; yayinlanmadi."
+                durum=1
+              fi
             fi
           fi
 
           # Dal her durumda silinir; ertesi gunun gonderimi onu yeniden olusturur.
           # (Silinmezse eski dal, yeni gonderimin reddedilmesine yol acar.)
-          # Bu is surerken dala yeni bir gonderim geldiyse dal silinmez; siradaki is onu birlestirir.
+          # Bu is surerken dala yeni bir gonderim geldiyse dal silinmez; siradaki is onu isler.
           git push --quiet --force-with-lease="refs/heads/${DAL}:${birlesen}" origin --delete "${DAL}" || true
           exit "${durum}"

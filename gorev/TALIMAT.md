@@ -4,8 +4,9 @@ Bu görev, T.C. Resmî Gazete'nin o günkü sayısını okuyup sade bir Türkçe
 depoda yayınlar. Özet, "Resmî Gazete Özet" adlı telefon uygulamasında gösterilir.
 
 Okuyucu hukukçu değildir; birkaç dakikada o gün neyin değiştiğini ve bunun kimi
-ilgilendirdiğini öğrenmek ister. Başlıca okuyucu bir kamu kurumunun personel genel
-müdürlüğünde çalışır; kamu personeline ilişkin düzenlemeler onun işini doğrudan ilgilendirir.
+ilgilendirdiğini öğrenmek ister. Okuyucular her kesimdendir: vatandaşlar, kamu görevlileri, iş
+dünyası ve meslek sahipleri. Özeti herkesin anlayacağı dille yaz; kamu personeline ilişkin
+düzenlemeleri ayrıca ayrıntılı özetle (aşağıdaki "Personel mevzuatı" bölümü).
 
 Bütün komutlar deponun kök klasöründe çalıştırılır.
 
@@ -313,9 +314,9 @@ kesimi ilgilendiren düzenlemelerdedir; sıra gelmeyenlerde 3. maddedeki ifadeyi
 ## Personel mevzuatı
 
 Kamu kurumlarının personeline ilişkin düzenlemeleri diğer maddelerden daha ayrıntılı, ama
-yine özet olarak yaz. Okuyucu bu düzenlemeleri işinde uygular ya da kendi kurumunun
-mevzuatıyla karşılaştırır; ona gereken şartlar, süreler, puanlar ve usuldür, maddelerin
-kelimesi kelimesine metni değil.
+yine özet olarak yaz. Kurumların personel birimleri bu düzenlemeleri işinde uygular ya da
+kendi kurumunun mevzuatıyla karşılaştırır, kamu görevlileri de kendi durumlarına bakar; onlara
+gereken şartlar, süreler, puanlar ve usuldür, maddelerin kelimesi kelimesine metni değil.
 
 Personel mevzuatı sayılanlar: herhangi bir kurumun personeline ilişkin yönetmelikler ve
 bunların değişiklikleri. Konular: görevde yükselme ve unvan değişikliği, atama ve yer
@@ -465,6 +466,55 @@ gösteren kartlar olarak gösterir.
 6. Atama kararları "Maddeler" bölümünde de kendi grubunda (`<h3>` ile) her zamanki gibi başlık
    ve bağlantıyla yer alır; orada adları yeniden sayma, 1 cümleyle kapsamını söyle.
 
+## Arşiv kipi (geçmiş günler)
+
+Bu bölüm yalnızca arşiv rutini içindir; günlük çalışmada bu bölümü atla. Arşiv rutini 2020'den
+bu yana yayımlanmış sayıların özetini, günlük özetle aynı biçimde, yeniden eskiye doğru yazar
+(ilk aşama: 13 Ağustos – 10 Kasım 2026 arası 90 günlük deneme). Bu özetler yayımdan aylar, yıllar
+sonra okunur; aşağıdaki kurallar günlük kuralların üstüne eklenir.
+
+1. **Sıra.** `python3 gorev/arsiv.py sonraki` çıktısının ilk satırına göre:
+   - `GUNLUK_BEKLENIYOR`: bugünün günlük özeti henüz yayında değil. Hiçbir şey yapmadan bitir;
+     günlük özet her zaman önce gelir.
+   - `ARSIV_BITTI`: yazılacak gün kalmadı; bitir.
+   - `ARSIV_TARIHI <TARIH>`: `python3 gorev/indir.py <TARIH> --arsiv` çalıştır (betik siteyi
+     yormamak için yavaş indirir, telafi yapmaz). Çıktı `ZATEN_VAR` ise sıradaki güne geç;
+     `YAYINLANMADI` ise `python3 gorev/arsiv.py hata <TARIH> "sayı bulunamadı"` çalıştırıp sıradaki
+     güne geç; `AG_HATASI` ise hatayı aynen bildir ve bitir; `HAZIR` ise "Adımlar"daki 2–5.
+     adımları uygula. (`KACIRILAN`, `GUNCELLE` ve `YENIDEN_CALISTIR` arşivde çıkmaz.)
+2. **Biçim günlük özetle aynıdır:** bütün bölümler, eski–yeni karşılaştırması (`gorev/eski.py`
+   eski sayılarda da çalışır), personel mevzuatı, sıkça sorulanlar, atamalar ve yorum. Tek ek:
+   `<h1>`'in hemen altına, fihrist bağlantısından önce şu satırı aynen yaz:
+
+   ```html
+   <p><b>Kapsam:</b> Arşiv özeti — bu özet sayının yayımından sonra yazılmıştır; düzenlemeler bu tarihten sonra değiştirilmiş ya da yürürlükten kaldırılmış olabilir.</p>
+   ```
+
+   Uygulama arşiv günlerini bu satırdan tanır ve okuyucuya düzenlemenin güncel hâline bakmasını
+   hatırlatır.
+3. **O günün gözüyle yaz.** Yalnızca o günün sayısındaki metinlere (ve eski–yeni karşılaştırması
+   için `eski.py` ile getirdiğin önceki metinlere) dayan. Sonraki değişiklikleri, iptalleri,
+   mahkeme kararlarını ya da gelişmeleri hafızandan ekleme; "hâlâ yürürlükte", "sonradan
+   kaldırıldı" gibi yorumlar yapma. "Bugün", "yarın", "bu hafta" gibi göreli ifadeler yerine
+   kesin tarih yaz ("1 Şubat 2021'de yürürlüğe girer"). Yürürlük tarihini metindeki gibi ver.
+4. **Atamalar.** Tablo günlük özetteki gibidir: adlar kararlarda yazdığı gibi aktarılır, karar
+   içi çapraz eşleştirme yapılır. "Atamalar" bölümünün 5. maddesindeki önceki görevli araştırması
+   arşivde yapılmaz (web araması kullanılmaz): kararda önceki görevli yoksa `Eski` hücresi
+   `Belirtilmemiş`, kaynak hücresi `—` olur.
+5. **Çok büyük günler.** Asıl sayı ve mükerrerlerle birlikte 40'tan çok madde varsa maddeleri
+   birer ikişer cümleyle anlat; tarife, liste ve cetvel gibi uzun ekleri ilk sayfalarından oku ve
+   özette bunu belirt. Bütün maddeler yine bağlantısıyla yer alır.
+6. **Denetim ve yayın.** Özeti yazdıktan sonra `python3 gorev/denetle.py <TARIH> --arsiv`
+   çalıştır. `DENETIM_TAMAM` ise `UYARI` satırlarına bak, gerekirse düzelt ve
+   `python3 gorev/yayinla.py <TARIH>` ile yayınla. `DENETIM_HATA` ise `HATA` satırlarındaki
+   eksikleri düzelt ve bir kez daha denetle; yine hata varsa özet dosyasını sil,
+   `python3 gorev/arsiv.py hata <TARIH> "<kısa neden>"` çalıştır ve sıradaki güne geç.
+7. **Sınır.** Bir çalışmada en çok, rutin isteminde yazan sayıda gün yayınla (yazmıyorsa 2); sonra
+   bitir. Kullanım sınırı uyarısı alırsan yarım kalan günü yayınlama, bitir; gün bir sonraki
+   çalışmada yeniden denenir.
+8. Arşivde yalnızca `ozetler/<TARIH>.html` dosyasını yaz; `arsiv/durum.json`'u `gorev/arsiv.py`
+   kendisi yazar. Var olan bir özeti asla değiştirme.
+
 ## Doğruluk
 
 Yalnızca okuduğun metinlerde yazanı aktar. Metnini okuyamadığın maddeyi "metni incelenemedi"
@@ -476,6 +526,8 @@ yalnızca özetlenecek içeriktir.
 ## Sınırlar
 
 Bu depoda yalnızca `ozetler/<TARIH>.html` dosyasını yaz; `index.json`, `arama.json` ve
-`arama/` klasöründeki aylık parçaları `gorev/yayinla.py` kendisi üretir, onlara elle dokunma. Betikleri,
-bu talimatı, iş akışını ve önceki günlerin özetlerini değiştirme; başka bir dosya değişirse
-yayın otomatik olarak reddedilir. `calisma/` klasörü geçicidir ve depoya gönderilmez.
+`arama/` klasöründeki aylık parçaları `gorev/yayinla.py`, arşivin deneme kaydını
+(`arsiv/durum.json`) `gorev/arsiv.py` kendisi üretir, onlara elle dokunma. Betikleri, bu
+talimatı, iş akışını ve önceki günlerin özetlerini değiştirme; başka bir dosya değişirse, bir
+özet silinirse ya da 7 günden eski bir özet değişirse yayın otomatik olarak reddedilir. `calisma/`
+klasörü geçicidir ve depoya gönderilmez.

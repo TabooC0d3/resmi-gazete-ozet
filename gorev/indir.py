@@ -3,6 +3,8 @@
 
 Kullanim: python3 gorev/indir.py [yyyyMMdd]   (tarih verilmezse Turkiye saatine gore bugun)
           python3 gorev/indir.py --sonra yyyyMMdd   (telafiye o gunden sonraki gunlerden devam et)
+          python3 gorev/indir.py yyyyMMdd --arsiv   (arsiv: gecmis bir gun; siteyi yormamak icin
+                                                     her indirmeden sonra ARSIV_BEKLEME saniye beklenir)
 Ciktinin ilk satiri: ZATEN_VAR | YAYINLANMADI | AG_HATASI | HAZIR <klasor>
 
 HAZIR'dan sonraki satirlar:
@@ -39,6 +41,10 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) ResmiGazeteOzet/1.0"
 MADDE = re.compile(r'href\s*=\s*"(\d{8}(?:M\d+)?-\d+(?:-\d+)?\.(?:htm|html|pdf))"', re.I)
 
 
+BEKLEME = 0.0  # --arsiv ile ARSIV_BEKLEME olur: binlerce gecmis sayi siteyi yormasin
+ARSIV_BEKLEME = 1.0
+
+
 def indir(url, deneme=3):
     """Dosyayi indirir. Gecici ag hatalarinda birkac kez yeniden dener; 404 hemen bildirilir."""
     son_hata = None
@@ -46,7 +52,10 @@ def indir(url, deneme=3):
         try:
             istek = urllib.request.Request(url, headers={"User-Agent": UA})
             with urllib.request.urlopen(istek, timeout=45) as yanit:
-                return yanit.read()
+                veri = yanit.read()
+            if BEKLEME:
+                time.sleep(BEKLEME)
+            return veri
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 raise
@@ -88,6 +97,13 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     argumanlar = sys.argv[1:]
+    if "--arsiv" in argumanlar:
+        # Arsiv (gecmis gun): tarih zorunlu, telafi yapilmaz, indirmeler yavaslatilir
+        global BEKLEME
+        argumanlar = [a for a in argumanlar if a != "--arsiv"]
+        if len(argumanlar) != 1:
+            sys.exit("--arsiv ile tek bir tarih (yyyyMMdd) verilmeli")
+        BEKLEME = ARSIV_BEKLEME
     sonra = None
     if len(argumanlar) == 2 and argumanlar[0] == "--sonra":
         sonra = argumanlar[1]

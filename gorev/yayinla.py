@@ -72,17 +72,19 @@ def arama_kelimeleri(metin):
 
 
 def arsiv_mi(ozet):
-    """Personel arsivi ozeti mi: basliktan sonra "<p><b>Kapsam:</b> Personel arşivi …</p>" satiri.
+    """Arsiv ozeti mi: basliktan sonra "<p><b>Kapsam:</b> Arşiv özeti — …</p>" satiri.
 
-    2020'den bu yana geriye dogru doldurulan gecmis gunlerin ozetleri sayinin tamamini degil,
-    yalnizca kamu personeline iliskin duzenlemeleri anlatir; uygulama bu gunleri ayrica isaretler.
+    2020'den bu yana yeniden eskiye doldurulan gecmis gunlerin ozetleri gunluk ozetle ayni
+    bicimdedir ama sonradan yazilir; uygulama bu gunleri ayrica isaretler ve duzenlemelerin
+    sonradan degismis olabilecegini soyler. (2.2'deki "Personel arşivi" ibaresi de tanınır.)
     """
-    return bool(re.search(r"(?is)<b>\s*Kapsam\s*:?\s*</b>\s*:?\s*Personel arşivi", ozet))
+    return bool(re.search(r"(?is)<b>\s*Kapsam\s*:?\s*</b>\s*:?\s*(Arşiv özeti|Personel arşivi)", ozet))
 
 
 def arama_kaydi(ozet):
     """Arama dizini icin bir gunun kaydi: sayi, duzenleme sayisi, personel, onizleme, kelime kokleri
-    ve (personel arsivi ozetiyse) "arsiv": true."""
+    ve (arsiv ozetiyse) "arsiv_ozeti": true. (Anahtar 2.2'deki "arsiv" degildir: 2.2 bunu
+    "Personel arşivi" diye gosterirdi; 2.3 yeni anahtari okur.)"""
     sayi = re.search(r"(\d{3,6})\s+Sayılı", ozet)
     maddeler = bolum(ozet, "Maddeler")
     duzenleme = len(re.findall(r'(?is)<p>\s*<a\s[^>]*href="[^"]+"[^>]*>[^<]+</a>\s*</p>', maddeler))
@@ -96,7 +98,7 @@ def arama_kaydi(ozet):
         "metin": arama_kelimeleri(kucuk_harf(duz_metin(ozet))),
     }
     if arsiv_mi(ozet):
-        kayit["arsiv"] = True
+        kayit["arsiv_ozeti"] = True
     return kayit
 
 
@@ -112,8 +114,8 @@ def index_yaz():
     """index.json, aylik arama parcalarini (arama/YYYYMM.json) ve arama.json'u yeniden yazar.
 
     index.json: uygulamanin okudugu tarih listesi (en yeni basta), her ozetin boyutu, arama
-    parcalarinin boyutlari ("arama_parcalari": {"202611": bayt}), personel arsivi gunleri
-    ("arsiv") ve arama.json'un boyutu. Uygulama, telefondaki ozetin boyutu buradakinden farkliysa o
+    parcalarinin boyutlari ("arama_parcalari": {"202611": bayt}), arsiv ozeti olan gunler
+    ("arsiv_gunleri") ve arama.json'un boyutu. Uygulama, telefondaki ozetin boyutu buradakinden farkliysa o
     gunu yeniden indirir; boylece sonradan duzeltilen ozetler telefonda da guncellenir.
 
     arama/YYYYMM.json (2.2): o ayin gunlerinin aranabilir bilgileri. Uygulamanin gecmis paneli,
@@ -156,7 +158,8 @@ def index_yaz():
         json.dump(
             {
                 "guncel": tarihler[0], "tarihler": tarihler, "boyutlar": boyutlar, "arama_boyut": boyut(arama),
-                "arama_parcalari": parcalar, "arsiv": [t for t in tarihler if gunler[t].get("arsiv")],
+                "arama_parcalari": parcalar,
+                "arsiv_gunleri": [t for t in tarihler if gunler[t].get("arsiv_ozeti")],
             },
             f, separators=(",", ":"),
         )

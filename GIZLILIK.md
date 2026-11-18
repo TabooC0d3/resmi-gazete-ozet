@@ -1,6 +1,6 @@
 # Özet RG: Gizlilik Politikası / Privacy Policy
 
-Son güncelleme / Last updated: 17 Kasım 2026 / 17 November 2026
+Son güncelleme / Last updated: 18 Kasım 2026 / 18 November 2026
 
 Geliştirici / Developer: Birol ABANUZOĞLU · İletişim / Contact: <birolabanuzoglu@gmail.com>
 
@@ -76,6 +76,10 @@ resmî siteleri ve haber ajansları gibi kamuya açık kaynaklardan araştırıl
 bağlantısı adın yanında gösterilir. Kişiler hakkında görev bilgisi dışında hiçbir bilgi (kimlik
 numarası, iletişim bilgisi vb.) eklenmez. Bağlayıcı olan, Resmî Gazete'de yayımlanan kararın
 kendisidir. Bir düzeltme talebiniz varsa aşağıdaki adrese yazabilirsiniz.
+
+2020'den bu yana yayımlanmış sayıların özetleri (arşiv) de aynı biçimde, sonradan hazırlanır.
+Arşivde önceki görevli araştırılmaz; adlar yalnızca kararlardaki yazımıyla yer alır. Bir arşiv
+özetinde adınızın yer almasını istemiyorsanız aşağıdaki adrese yazın; adınız o özetten kaldırılır.
 
 ### İzinler ve cihaz özellikleri
 
@@ -180,6 +184,11 @@ sources such as official institutional websites and news agencies; the source li
 next to the name. No information other than the official position (ID numbers, contact details,
 etc.) is added about these persons. The decision published in the Official Gazette is
 authoritative. You can request a correction at the address below.
+
+Summaries of issues published since 2020 (the archive) are prepared in the same way,
+retrospectively. In the archive the previous holder is not researched; names appear only as
+written in the decisions. If you do not want your name to appear in an archive summary, write to
+the address below and it will be removed from that summary.
 
 ### Permissions and device features
 
