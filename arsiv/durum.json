@@ -1,7 +1,12 @@
 {
  "gunler": {
-  "20261029": {
+  "20261028": {
    "deneme": 1,
+   "son": "2026-11-18 13:14"
+  },
+  "20261029": {
+   "deneme": 5,
+   "hata": "sayı bulunamadı (o gün Resmî Gazete yayımlanmamış)",
    "son": "2026-11-18 13:14"
   },
   "20261030": {
