@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Yazilan ozeti depoya isler: index.json ve arama.json'u yeniler, commit eder ve gonderir.
+"""Yazilan ozeti depoya isler: index.json, aylik arama parcalarini (arama/YYYYMM.json) ve
+arama.json'u yeniler, commit eder ve gonderir.
 
 Kullanim: python3 gorev/yayinla.py yyyyMMdd [dal]
 
@@ -70,32 +71,58 @@ def arama_kelimeleri(metin):
     return " ".join(sorted(tutulan))
 
 
+def arsiv_mi(ozet):
+    """Personel arsivi ozeti mi: basliktan sonra "<p><b>Kapsam:</b> Personel arşivi …</p>" satiri.
+
+    2020'den bu yana geriye dogru doldurulan gecmis gunlerin ozetleri sayinin tamamini degil,
+    yalnizca kamu personeline iliskin duzenlemeleri anlatir; uygulama bu gunleri ayrica isaretler.
+    """
+    return bool(re.search(r"(?is)<b>\s*Kapsam\s*:?\s*</b>\s*:?\s*Personel arşivi", ozet))
+
+
 def arama_kaydi(ozet):
-    """arama.json icin bir gunun kaydi: sayi, duzenleme sayisi, personel, onizleme ve kelime kokleri."""
+    """Arama dizini icin bir gunun kaydi: sayi, duzenleme sayisi, personel, onizleme, kelime kokleri
+    ve (personel arsivi ozetiyse) "arsiv": true."""
     sayi = re.search(r"(\d{3,6})\s+Sayılı", ozet)
     maddeler = bolum(ozet, "Maddeler")
     duzenleme = len(re.findall(r'(?is)<p>\s*<a\s[^>]*href="[^"]+"[^>]*>[^<]+</a>\s*</p>', maddeler))
     one = bolum(ozet, "Öne çıkanlar")
     basliklar = [duz_metin(b).rstrip(".:").strip() for b in re.findall(r"(?is)<li>\s*<b>(.*?)</b>", one)]
-    return {
+    kayit = {
         "sayi": sayi.group(1) if sayi else "",
         "duzenleme": duzenleme,
         "personel": bool(re.search(r"(?i)<b>\s*Personel mevzuatı\s*</b>", ozet)),
         "onizleme": " · ".join(b for b in basliklar if b),
         "metin": arama_kelimeleri(kucuk_harf(duz_metin(ozet))),
     }
+    if arsiv_mi(ozet):
+        kayit["arsiv"] = True
+    return kayit
+
+
+ARAMA_GUN = 120  # eski uygulamalar (2.1 ve oncesi) icin arama.json yalnizca son bu kadar gunu tutar
+
+
+def json_yaz(yol, veri):
+    with open(yol, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(veri, f, ensure_ascii=False, separators=(",", ":"))
 
 
 def index_yaz():
-    """index.json ve arama.json dosyalarini yeniden yazar.
+    """index.json, aylik arama parcalarini (arama/YYYYMM.json) ve arama.json'u yeniden yazar.
 
-    index.json: uygulamanin okudugu tarih listesi (en yeni basta), her ozetin boyutu ve
-    arama.json'un boyutu. Uygulama, telefondaki ozetin boyutu buradakinden farkliysa o gunu
-    yeniden indirir; boylece sonradan duzeltilen ozetler telefonda da guncellenir.
+    index.json: uygulamanin okudugu tarih listesi (en yeni basta), her ozetin boyutu, arama
+    parcalarinin boyutlari ("arama_parcalari": {"202611": bayt}), personel arsivi gunleri
+    ("arsiv") ve arama.json'un boyutu. Uygulama, telefondaki ozetin boyutu buradakinden farkliysa o
+    gunu yeniden indirir; boylece sonradan duzeltilen ozetler telefonda da guncellenir.
 
-    arama.json: butun gunlerin aranabilir bilgileri. Uygulamanin gecmis paneli, telefona
-    inmemis gunlerde de bu dosya sayesinde indirmeden arama yapar. Surum 2'de "metin" alani
+    arama/YYYYMM.json (2.2): o ayin gunlerinin aranabilir bilgileri. Uygulamanin gecmis paneli,
+    telefona inmemis gunlerde de bunlar sayesinde indirmeden arama yapar; yeni bir gun yalnizca kendi
+    ayinin parcasini degistirdigi icin uygulama yalnizca o parcayi yeniden indirir (2020'den bu yana
+    doldurulacak arsivde tek dosya hem buyuk hem her gun bastan inerdi). Surum 2'de "metin" alani
     ozetin tam metni degil, kelime kokleridir ("kok": kac harfe kirpildigi; bkz. arama_kelimeleri).
+
+    arama.json: 2.1 ve onceki uygulamalar icin ayni bicimde, yalnizca son ARAMA_GUN gun.
     """
     klasor = os.path.join(KOK, "ozetler")
     tarihler = sorted(
@@ -106,13 +133,31 @@ def index_yaz():
     for t in tarihler:
         with open(os.path.join(klasor, t + ".html"), encoding="utf-8") as f:
             gunler[t] = arama_kaydi(f.read())
+
+    # Aylik parcalar (en yeni ay basta); gunu kalmayan ayin parcasi silinir
+    parca_klasor = os.path.join(KOK, "arama")
+    os.makedirs(parca_klasor, exist_ok=True)
+    aylar = {}
+    for t in tarihler:
+        aylar.setdefault(t[:6], {})[t] = gunler[t]
+    parcalar = {}
+    for ay, ayin_gunleri in aylar.items():
+        yol = os.path.join(parca_klasor, ay + ".json")
+        json_yaz(yol, {"surum": 2, "kok": KOK_UZUNLUGU, "ay": ay, "gunler": ayin_gunleri})
+        parcalar[ay] = boyut(yol)
+    for ad in os.listdir(parca_klasor):
+        if re.fullmatch(r"\d{6}\.json", ad) and ad[:6] not in aylar:
+            os.remove(os.path.join(parca_klasor, ad))
+
     arama = os.path.join(KOK, "arama.json")
-    with open(arama, "w", encoding="utf-8", newline="\n") as f:
-        json.dump({"surum": 2, "kok": KOK_UZUNLUGU, "gunler": gunler}, f, ensure_ascii=False, separators=(",", ":"))
+    json_yaz(arama, {"surum": 2, "kok": KOK_UZUNLUGU, "gunler": {t: gunler[t] for t in tarihler[:ARAMA_GUN]}})
     boyutlar = {t: boyut(os.path.join(klasor, t + ".html")) for t in tarihler}
     with open(os.path.join(KOK, "index.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(
-            {"guncel": tarihler[0], "tarihler": tarihler, "boyutlar": boyutlar, "arama_boyut": boyut(arama)},
+            {
+                "guncel": tarihler[0], "tarihler": tarihler, "boyutlar": boyutlar, "arama_boyut": boyut(arama),
+                "arama_parcalari": parcalar, "arsiv": [t for t in tarihler if gunler[t].get("arsiv")],
+            },
             f, separators=(",", ":"),
         )
 
@@ -130,7 +175,8 @@ def main():
 
     index_yaz()
 
-    git("add", "index.json", "arama.json", "ozetler/" + tarih + ".html")
+    # "arama" klasoru: yeni ve degisen aylik parcalar ile (varsa) silinen parca birlikte eklenir
+    git("add", "index.json", "arama.json", "arama", "ozetler/" + tarih + ".html")
     # Yeniden denemede (onceki calistirma commit etmis olabilir) ikinci kez commit etme
     if git("diff", "--cached", "--quiet", check=False).returncode != 0:
         kimlik = []
