@@ -59,12 +59,15 @@ jobs:
             silinen="$(git diff --name-only --diff-filter=D "origin/main...origin/${DAL}" | grep -E '^(ozetler|arsiv)/' || true)"
             alinacak="$(printf '%s\n' "${degisen}" | grep -E '^(ozetler/[0-9]{8}\.html|arsiv/durum\.json)$' || true)"
             ozet_sayisi="$(printf '%s\n' "${alinacak}" | grep -c '^ozetler/' || true)"
-            # main'de zaten bulunan ve 7 gunden eski ozetler korunur
+            # main'de zaten bulunan ve 7 gunden eski ozetler korunur. Icerigi main'dekiyle ayni olan
+            # dosya degisiklik sayilmaz: arsiv calismasi ayni dala gun gun gonderir ve dalin ikinci
+            # gonderimi, ilk gonderimde islenmis gunu de icerir (18 Kasim'da 9 Kasim bu yuzden reddedildi).
             esik="$(python3 -c 'import datetime as d; print((d.datetime.now(d.timezone.utc) + d.timedelta(hours=3) - d.timedelta(days=7)).strftime("%Y%m%d"))')"
             korunan=""
             for f in $(printf '%s\n' "${alinacak}" | grep '^ozetler/' || true); do
               t="${f:8:8}"
-              if [ "${t}" -lt "${esik}" ] && git cat-file -e "origin/main:${f}" 2>/dev/null; then
+              if [ "${t}" -lt "${esik}" ] && git cat-file -e "origin/main:${f}" 2>/dev/null \
+                && [ "$(git rev-parse "origin/main:${f}")" != "$(git rev-parse "origin/${DAL}:${f}")" ]; then
                 korunan="${korunan} ${f}"
               fi
             done
@@ -116,8 +119,12 @@ jobs:
             fi
           fi
 
-          # Dal her durumda silinir; ertesi gunun gonderimi onu yeniden olusturur.
-          # (Silinmezse eski dal, yeni gonderimin reddedilmesine yol acar.)
-          # Bu is surerken dala yeni bir gonderim geldiyse dal silinmez; siradaki is onu isler.
-          git push --quiet --force-with-lease="refs/heads/${DAL}:${birlesen}" origin --delete "${DAL}" || true
+          # Islenen dal silinir; ertesi gunun gonderimi onu yeniden olusturur. Bu is surerken dala yeni
+          # bir gonderim geldiyse dal silinmez; siradaki is onu isler. Reddedilen dal ise incelenmek ve
+          # icerigi kurtarilmak uzere birakilir (rutin oturumlarinin dal adlari her calismada farklidir).
+          if [ "${durum}" -eq 0 ]; then
+            git push --quiet --force-with-lease="refs/heads/${DAL}:${birlesen}" origin --delete "${DAL}" || true
+          else
+            echo "Reddedilen dal birakildi: ${DAL}"
+          fi
           exit "${durum}"
