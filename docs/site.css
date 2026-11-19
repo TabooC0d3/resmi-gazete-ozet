@@ -243,3 +243,20 @@ html.dark .ata-share{color:#FFB27A;background:#3E2716;box-shadow:inset 0 0 0 1px
 .site-aud{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;align-items:center}
 .site-aud .aud-k{width:100%}
 .aud-c.on{color:#fff;background:#075E6E;box-shadow:none}
+
+/* Atama PDF tablosu, bulten PDF, yazdirma */
+.ata-acts{display:flex;gap:8px;flex-wrap:wrap}
+.ata-acts .ata-share{flex:1 1 140px}
+.ata-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.ata-tbl th,.ata-tbl td{padding:5px 7px;border:1px solid var(--line);text-align:left;vertical-align:top}
+.ata-tbl th{background:var(--bg);font-weight:800}
+.note-doc h2 small{font-size:12px;font-weight:600;color:var(--mut)}
+.site-share.alt{margin-top:8px;color:var(--brand);background:var(--brand-t);box-shadow:none}
+@media print{
+  body.printing-page .band, body.printing-page .site-top, body.printing-page .foot, body.printing-page .site-find, body.printing-page .toast, body.printing-page .back, body.printing-page .site-share, body.printing-page .lst-chips, body.printing-page .src-note{display:none!important}
+  body.printing-page{background:#fff!important}
+  body.printing-page main{max-width:none;padding:0}
+  body.printing-page .card{box-shadow:none!important;border:1px solid #ddd;break-inside:avoid}
+  body.printing-note .ata-tbl th{background:#eee}
+  body.printing-note .ata-tbl tr{break-inside:avoid}
+}

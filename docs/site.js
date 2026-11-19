@@ -380,6 +380,7 @@ function ataTitleOf(position) {
   return "diger";
 }
 const ATA = { sec: null, top: false, titles: new Set() };
+const ataSave = () => { setPref("ata_top", ATA.top ? "1" : "0"); setPref("ata_unvan", [...ATA.titles].join(",")); };
 const ataVisible = rows => rows.filter(r => (!ATA.top || isSenior(r.position)) && (!ATA.titles.size || ATA.titles.has(ataTitleOf(r.position))));
 
 function appointments(sec) {
@@ -404,7 +405,7 @@ function appointments(sec) {
     }
   } else if (all.length) s += `<p class="hint">Seçili süzgeçlere uyan atama yok.</p>`;
   s += `<p class="ata-note">Adlar Resmî Gazete'de yayımlanan atama kararlarından aktarılmıştır; bağlayıcı olan kararın kendisidir.</p>`;
-  if (rows.length) s += `<button type="button" class="ata-share" data-ata-paylas>📋 Atama Listesini Paylaş<small>Metin olarak kopyala ya da paylaş · seçili süzgeçle</small></button>`;
+  if (rows.length) s += `<div class="ata-acts"><button type="button" class="ata-share" data-ata-paylas>📋 Metin olarak paylaş<small>Kopyala ya da paylaş · seçili süzgeçle</small></button><button type="button" class="ata-share" data-ata-pdf>📄 A4 PDF<small>Tablo olarak yazdır / PDF · seçili süzgeçle</small></button></div>`;
   return s + `</section>`;
 }
 function ataRerender() {
@@ -421,6 +422,18 @@ function ataText() {
   lines.push("\nAdlar Resmî Gazete'deki atama kararlarından aktarılmıştır; bağlayıcı olan kararın kendisidir.\n" + new URL(dayUrl(P.k), location.href).href);
   return lines.join("\n");
 }
+function ataPdf() {
+  const P = CURP, rows = ataVisible(appointmentRows(ATA.sec.nodes));
+  const nm = t => (t.split("(")[0].trim() || "—");
+  const scope = [ATA.top ? "Yalnızca üst düzey" : "", ATA.titles.size ? "Ünvan: " + ATA_TITLES.filter(([k]) => ATA.titles.has(k)).map(([, l]) => l).join(", ") : ""].filter(Boolean).join(" · ");
+  const m = openModal(`<div class="note-doc"><div class="note-top"><b>ATAMA LİSTESİ</b><span>Özet RG · ${longOf(P.k)}${P.d.issue ? ` · Sayı ${esc(P.d.issue)}` : ""}</span></div>` +
+    `<h2>${rows.length} atama${scope ? ` <small>(${esc(scope)})</small>` : ""}</h2><table class="ata-tbl"><tr><th>#</th><th>Görev</th><th>Kurum</th><th>Eski</th><th>Yeni</th></tr>` +
+    rows.map((r, i) => { const parts = r.position.split(" · ").map(x => x.trim()).filter(Boolean); return `<tr><td>${i + 1}</td><td>${isSenior(r.position) ? "⭐ " : ""}${esc(parts[parts.length - 1] || r.position)}</td><td>${esc(parts.slice(0, -1).join(" · "))}</td><td>${esc(nm(r.old))}</td><td><b>${esc(nm(r.nw))}</b></td></tr>`; }).join("") +
+    `</table><p class="note-foot">Adlar Resmî Gazete'de yayımlanan atama kararlarından aktarılmıştır; bağlayıcı olan kararın kendisidir. Yapay zekâ ile hazırlanan özetten derlenmiştir. ${esc(new URL(dayUrl(P.k), location.href).href)}</p></div>` +
+    `<div class="sheet-btns no-print"><button type="button" class="sbtn" data-act="print">🖨️ Yazdır / PDF</button></div><button type="button" class="sbtn ghost no-print" data-close>Kapat</button>`, "notemodal");
+  m.querySelector('[data-act="print"]').addEventListener("click", () => { document.body.classList.add("printing-note"); window.print(); setTimeout(() => document.body.classList.remove("printing-note"), 500); });
+}
+
 function ataUnvanModal() {
   const all = appointmentRows(ATA.sec.nodes);
   const cnt = k => all.filter(r => ataTitleOf(r.position) === k).length;
@@ -429,8 +442,8 @@ function ataUnvanModal() {
     ATA_TITLES.filter(([k]) => cnt(k) > 0).map(([k, l]) => `<button type="button" class="fchip${sel.has(k) ? " on" : ""}" data-t="${k}">${l}<b class="n">${cnt(k)}</b></button>`).join("") +
     `</div><div class="sheet-btns"><button type="button" class="sbtn alt" data-clear>Tümü</button><button type="button" class="sbtn" data-apply>Uygula</button></div><button type="button" class="sbtn ghost" data-close>Kapat</button>`, "unvan");
   m.querySelectorAll("[data-t]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.t; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle("on", sel.has(k)); }));
-  m.querySelector("[data-clear]").addEventListener("click", () => { ATA.titles = new Set(); closeModal(); ataRerender(); });
-  m.querySelector("[data-apply]").addEventListener("click", () => { ATA.titles = sel; closeModal(); ataRerender(); });
+  m.querySelector("[data-clear]").addEventListener("click", () => { ATA.titles = new Set(); ataSave(); closeModal(); ataRerender(); });
+  m.querySelector("[data-apply]").addEventListener("click", () => { ATA.titles = sel; ataSave(); closeModal(); ataRerender(); });
 }
 
 // ------------------------------------------------------------------ maddeler
@@ -645,7 +658,7 @@ async function showDay(k, q) {
   });
   const items = groups.reduce((n, g) => n + g.items.length, 0);
   CURP = { k, d, groups, archive };
-  ATA.top = false; ATA.titles = new Set();
+  ATA.top = pref("ata_top") === "1"; ATA.titles = new Set(pref("ata_unvan").split(",").filter(Boolean));
   const one = secs.find(s => s.kind === "one");
   const hl = one ? one.nodes.filter(el => ["ul", "ol"].includes(tag(el))).reduce((n, el) => n + el.children.length, 0) : 0;
   const ata = secs.find(s => s.kind === "ata");
@@ -799,12 +812,14 @@ function setupFilters() {
 function wireDay(k, d, ozet) {
   if (!window.__dayClick) { window.__dayClick = true; $app.addEventListener("click", dayClick); }
   function dayClick(e) {
-    const at = e.target.closest("[data-ata-top],[data-ata-unvan],[data-ata-reset],[data-ata-paylas]");
+    if (e.target.closest("[data-ask-official]") && MISS) { e.preventDefault(); openAsk(MISS, null); return; }
+    const at = e.target.closest("[data-ata-top],[data-ata-unvan],[data-ata-reset],[data-ata-paylas],[data-ata-pdf]");
     if (at) {
       e.preventDefault();
-      if (at.hasAttribute("data-ata-top")) { ATA.top = !ATA.top; ataRerender(); }
+      if (at.hasAttribute("data-ata-top")) { ATA.top = !ATA.top; ataSave(); ataRerender(); }
       else if (at.hasAttribute("data-ata-unvan")) ataUnvanModal();
-      else if (at.hasAttribute("data-ata-reset")) { ATA.top = false; ATA.titles = new Set(); ataRerender(); }
+      else if (at.hasAttribute("data-ata-reset")) { ATA.top = false; ATA.titles = new Set(); ataSave(); ataRerender(); }
+      else if (at.hasAttribute("data-ata-pdf")) ataPdf();
       else {
         const text = ataText();
         (async () => {
@@ -935,13 +950,15 @@ function hitBar(k, q) {
 
 function showMissing(k) {
   const ok = k && k >= "20000101";
+  if (!window.__missClick) { window.__missClick = true; $app.addEventListener("click", e => { if (e.target.closest("[data-ask-official]") && MISS) { e.preventDefault(); openAsk(MISS, null); } }); }
+  MISS = ok ? { k, d: { issue: "", official: `https://www.resmigazete.gov.tr/eskiler/${k.slice(0, 4)}/${k.slice(4, 6)}/${k}.htm`, sections: [] }, groups: [], archive: false, official: true } : null;
   $app.innerHTML = `<section class="card hero">` + (ok ? `<div class="hero-top">${calBadge(k)}<div class="hero-txt"><div class="kicker">RESMÎ GAZETE ÖZETİ</div>` +
     `<h1>${longOf(k)}</h1><div class="sub">${wdOf(k)}</div></div></div>` + daynav(k) : "") +
     `<div class="empty"><b>Bu günün özeti henüz yok</b><p>${k > (INDEX.guncel || "") ? "Bu sayı henüz yayımlanmadı ya da özeti hazırlanıyor." :
       "Arşiv 2020'ye doğru geriye dönük dolduruluyor; bu gün henüz yazılmadı. Sayının aslına Resmî Gazete'den bakabilirsiniz."}</p></div>` +
     (ok ? `<a class="cta" href="https://www.resmigazete.gov.tr/eskiler/${k.slice(0, 4)}/${k.slice(4, 6)}/${k}.htm" target="_blank" rel="noopener">` +
       `<span class="cta-ic">${ic("bank")}</span><span class="cta-tx"><b>Resmî Gazete'de aç</b><small>O günün fihristi · resmigazete.gov.tr</small></span>` +
-      `<span class="cta-go">${ic("arrow")}</span></a>` : "") + `</section>`;
+      `<span class="cta-go">${ic("arrow")}</span></a>` + `<p class="hint">Bu günün özeti henüz yazılmadı. Resmî fihristi tarayıcıdan okuyamadığımız için yapay zekâ bağlantıdaki sayfayı kendisi okur.</p>` + `<button class="ask-day" type="button" data-ask-official>${ic("spark")}<span><b>Bu sayıyı yapay zekâya sor</b><small>Resmî fihristi okuyup özetletin, üst yazı ya da süre planı isteyin</small></span>${ic("arrow")}</button>` : "") + `</section>`;
   setMeta("Özet bulunamadı | Özet RG", "", ok ? dayUrl(k) : "./");
 }
 
@@ -1047,6 +1064,7 @@ const FONTS = [["0.92", "Küçük"], ["1", "Normal"], ["1.12", "Büyük"], ["1.2
 // Kayıtlar (Kaydet ve Not): yalnızca bu tarayıcıda, localStorage'da
 let CUR_DAY = "";
 let CURP = null;
+let MISS = null;
 const saved = () => { try { return JSON.parse(pref("kayit", "{}")) || {}; } catch (e) { return {}; } };
 const setSaved = o => setPref("kayit", JSON.stringify(o));
 const itemKey = (day, href, title) => `${day}|${href || title}`;
@@ -1239,8 +1257,13 @@ async function showBulletin(period) {
     highlights.slice(0, 10).map(h => `<li>${h.html}<a class="hl-go" href="${dayUrl(h.day)}" data-nav>${shortOf(h.day)} · özete git</a></li>`).join("") + `</ol></section>`;
   if (top.length) s += `<section id="b-ata" class="card sec sec-ata"><h2><span class="ic">${ic("group")}</span>Üst düzey atamalar<span class="cnt">${top.length}</span></h2><div class="ata-list">` +
     top.slice(0, 20).map(t => { const parts = t.position.split(" · "); return `<div class="ata-row top"><div class="ata-pos">${ic("bank")}<span><b>${esc(parts[parts.length - 1])}</b><i class="ata-top">⭐ Üst düzey</i><small>${esc(parts.slice(0, -1).join(" · "))} · ${shortOf(t.day)}</small></span></div><div class="ata-swap"><div class="ata-new"><span class="t">Yeni</span><b>${esc(t.nw || "—")}</b></div></div></div>`; }).join("") + `</div></section>`;
-  s += `<button class="site-share" type="button">${ic("share")}Bülteni paylaş</button><p class="note src-note">${ataN} atama kararı satırı, ${days.length} günlük özetten derlendi.</p>`;
+  s += `<button class="site-share" type="button">${ic("share")}Bülteni paylaş</button><button class="site-share alt" type="button" data-bpdf>${ic("doc")}A4 PDF olarak kaydet</button><p class="note src-note">${ataN} atama kararı satırı, ${days.length} günlük özetten derlendi.</p>`;
   $app.innerHTML = s;
+  $app.querySelector("[data-bpdf]").addEventListener("click", () => {
+    document.body.classList.add("printing-page");
+    window.print();
+    setTimeout(() => document.body.classList.remove("printing-page"), 500);
+  });
   $app.querySelector(".site-share").addEventListener("click", async () => {
     const text = `📊 Özet RG ${n === 7 ? "Haftalık" : "Aylık"} Bülten (${longOf(from)} – ${longOf(today)})\n${regs} düzenleme · ${pers.length} personel · ${top.length} üst düzey atama\n` +
       aList.slice(0, 5).map(([k, v]) => `• ${k}: ${v}`).join("\n") + `\n${new URL("?bulten=" + n, location.href).href}`;
@@ -1316,6 +1339,11 @@ const ASK_RULES = [
 ];
 const TASK_ITEM = "Aşağıda bir Resmî Gazete düzenlemesinin bilgileri var. Bunları incele ve en alttaki soruyu bu bilgilere dayanarak net, doğru ve anlaşılır biçimde yanıtla.";
 const TASK_DAY = "Aşağıda bir Resmî Gazete sayısının özeti ve bu sayıdaki düzenlemelerin bilgileri var. Bunları incele ve en alttaki soruyu bu bilgilere dayanarak net, doğru ve anlaşılır biçimde yanıtla.";
+const ASK_OZET = { key: "ozet", label: "📰 Özetini çıkar", q: "", dq: "Bu sayının günlük özetini hazırla.",
+  role: "Sen, Resmî Gazete'yi her gün takip ederek kamu kurumları için günlük mevzuat bülteni hazırlayan deneyimli bir mevzuat editörüsün. Önemli olanı ayırt eder, kısa ve doğru yazarsın.",
+  format: "1. Günün özeti: 3-5 cümle.\n2. Öne çıkanlar: geniş kesimleri etkileyen 3-6 düzenleme; tutar, oran ve tarih gibi kritik bilgilerle.\n3. Maddeler: bölüm sırasıyla her düzenleme için 1-3 cümle; çıkaran kurum ve yürürlük tarihi.\n4. Personel mevzuatı: kamu personelini ilgilendiren düzenlemeler ve etkileri (yoksa bunu belirt).\n5. Kısa değerlendirme: bu sayının pratikte ne anlama geldiği." };
+const TASK_OFFICIAL_DAY = "Aşağıda bir Resmî Gazete sayısının künyesi ve resmî fihrist sayfasının bağlantısı var. Bağlantıdaki fihristi ve düzenlemelerin metinlerini oku ve en alttaki soruyu bu metinlere dayanarak net, doğru ve anlaşılır biçimde yanıtla.";
+const OFFICIAL_RULE = "Aşağıda yalnızca sayının künyesi ve resmî fihrist sayfasının bağlantısı var. Bağlantıdaki metinlere erişebiliyorsan oku; erişemediğin düzenlemeyi yalnızca başlığıyla an, \"metne ulaşılamadı\" diye belirt ve içeriğini tahmin etme.";
 const AI_CUT = "\n…(metnin devamı kısaltıldı)";
 
 const plainOf = el => { const c = el.cloneNode(true); c.querySelectorAll("br").forEach(b => b.replaceWith("\n")); return c.textContent.replace(/[ \t]+/g, " ").trim(); };
@@ -1371,12 +1399,13 @@ function archiveNoteText(P) {
 }
 /** İstemi birleştirir; sığmazsa yalnızca bilgi bloğu sondan kısalır (rol, kurallar ve soru tam kalır) */
 function buildPrompt(P, item, kindKey, question, maxChars) {
-  const kind = ASKS.find(a => a.key === kindKey) || ASK_GENEL;
+  const kind = [ASK_OZET, ...ASKS].find(a => a.key === kindKey) || ASK_GENEL;
   const day = !item;
-  const head = `${kind.role}\n\nGÖREV\n${day ? TASK_DAY : TASK_ITEM}\n\nKURALLAR\n${ASK_RULES.map(r => "- " + r).join("\n")}\n\nYANIT BİÇİMİ\n${kind.format}\n\n=== RESMÎ GAZETE BİLGİLERİ ===\n`;
+  const rules = P.official ? ASK_RULES.map((r, i) => i === 3 ? OFFICIAL_RULE : r) : ASK_RULES;
+  const head = `${kind.role}\n\nGÖREV\n${P.official ? TASK_OFFICIAL_DAY : day ? TASK_DAY : TASK_ITEM}\n\nKURALLAR\n${rules.map(r => "- " + r).join("\n")}\n\nYANIT BİÇİMİ\n${kind.format}\n\n=== RESMÎ GAZETE BİLGİLERİ ===\n`;
   const tail = `\n=== BİLGİLERİN SONU ===\n\nSORU: ${question.trim()}`;
   const room = maxChars - head.length - tail.length;
-  let text = (day ? dayText(P, false) : itemText(item, P.k, P.d, false)) + archiveNoteText(P);
+  let text = P.official ? `KÜNYE: ${longOf(P.k)} tarihli Resmî Gazete\nBAĞLANTI: ${P.d.official}\n\nFİHRİST: sayfadaki bölümleri, düzenlemelerin başlıklarını ve asıl metinlerinin bağlantılarını bağlantıdan oku.` : (day ? dayText(P, false) : itemText(item, P.k, P.d, false)) + archiveNoteText(P);
   if (day && text.length > room) text = dayText(P, true) + archiveNoteText(P);
   if (text.length > room) {
     const limit = Math.max(0, room - AI_CUT.length), nl = text.lastIndexOf("\n", limit);
@@ -1401,7 +1430,7 @@ function openModal(html, cls = "") {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
 function openAsk(P, item) {
-  const kinds = ASKS;
+  const kinds = P.official ? [ASK_OZET, ...ASKS.filter(a => a.key !== "fark")] : ASKS;
   const m = openModal(`<div class="sheet-grip"></div><h3>✨ AI'ya Sor</h3><p class="sheet-sub">${esc(item ? item.title : `${longOf(P.k)} sayısı`)}</p>` +
     `<div class="site-chips">${kinds.map(a => `<button type="button" class="fchip" data-kind="${a.key}">${a.label}</button>`).join("")}</div>` +
     `<textarea class="site-q" rows="4" placeholder="Sorunuzu yazın ya da yukarıdan bir şablon seçin…"></textarea>` +
@@ -1412,7 +1441,7 @@ function openAsk(P, item) {
   m.querySelectorAll("[data-kind]").forEach(b => b.addEventListener("click", () => {
     kind = b.dataset.kind === kind ? "" : b.dataset.kind;
     m.querySelectorAll("[data-kind]").forEach(x => x.classList.toggle("on", x.dataset.kind === kind));
-    const a = ASKS.find(x => x.key === kind);
+    const a = kinds.find(x => x.key === kind);
     q.value = a ? (item ? a.q : a.dq) : "";
     q.focus();
   }));
@@ -1606,6 +1635,7 @@ async function route() {
   const q = new URLSearchParams(location.search);
   $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar") || q.has("takvim") || q.has("bulten"));
   applyFont();
+  MISS = null;
   if (q.has("hakkinda")) { showAbout(); return; }
   if (q.has("araclar")) { showTools(); return; }
   if (q.has("takvim")) { await showCalendar(); return; }
