@@ -172,3 +172,48 @@ html.dark .toast{background:#E8EAED;color:#121417}
 /* Baslik alt yazisi */
 h2 .t{flex:1;min-width:0}
 h2 .t small{display:block;margin-top:2px;font-size:12px;font-weight:600;color:var(--mut)}
+
+/* AI'ya Sor ve Bilgi Notu: alttan acilan sayfa */
+button.ask-day{width:100%;border:0;font:inherit;text-align:left;cursor:pointer}
+.site-noscroll{overflow:hidden}
+.site-modal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(15,10,10,.55)}
+.site-sheet{width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:10px 18px 18px;border-radius:24px 24px 0 0;background:var(--card);color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.35)}
+@media (min-width:700px){.site-modal{align-items:center}.site-sheet{border-radius:24px}}
+.sheet-grip{width:44px;height:5px;margin:2px auto 12px;border-radius:9px;background:var(--line)}
+.site-sheet h3{margin:0;font-size:19px;font-weight:800}
+.sheet-sub{margin:3px 0 12px;font-size:13px;color:var(--mut);font-weight:600}
+.site-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.site-chips .fchip{border:0;font:inherit;font-size:12.5px;font-weight:800;color:var(--violet);background:var(--violet-t);box-shadow:inset 0 0 0 1px #DCCBFB;cursor:pointer;height:34px}
+.site-chips .fchip.on{color:#fff;background:#6D28D9;box-shadow:none}
+.site-q{width:100%;box-sizing:border-box;padding:11px 13px;border:0;border-radius:14px;background:var(--bg);color:var(--ink);font:inherit;font-size:14.5px;line-height:1.45;box-shadow:inset 0 0 0 1.5px var(--line);resize:vertical}
+.site-q:focus{outline:0;box-shadow:inset 0 0 0 2px #6D28D9}
+.sheet-btns{display:flex;gap:10px;margin-top:12px}
+.sbtn{flex:1;height:46px;padding:0 12px;border:0;border-radius:15px;font:inherit;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#8B5CF6,#6D28D9 55%,#4C1D95);box-shadow:0 5px 12px rgba(109,40,217,.28);cursor:pointer}
+.sbtn.alt{color:#6D28D9;background:var(--violet-t);box-shadow:inset 0 0 0 1px #DCCBFB}
+.sbtn.ghost{width:100%;margin-top:8px;color:var(--ink2);background:transparent;box-shadow:none}
+.sheet-note{margin:9px 2px 0;text-align:center;font-size:11.5px;line-height:1.4;color:var(--mut)}
+.sheet-note.ok{color:var(--violet);font-weight:800}
+html.dark .site-chips .fchip{box-shadow:inset 0 0 0 1px #3D2F5C}
+html.dark .sbtn.alt{box-shadow:inset 0 0 0 1px #3D2F5C}
+/* Bilgi Notu belgesi */
+.note-doc{color:var(--ink);font-size:14px;line-height:1.55}
+.note-top{display:flex;justify-content:space-between;gap:10px;align-items:center;padding-bottom:7px;margin-bottom:10px;border-bottom:3px solid #B71C1C;font-size:12px;color:var(--mut)}
+.note-top b{font-size:13px;letter-spacing:.14em;color:#B71C1C}
+.note-doc h2{display:block;margin:0 0 10px;font-size:18px;line-height:1.3}
+.note-doc h4{margin:14px 0 6px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#B71C1C}
+.note-meta{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px}
+.note-meta th{width:84px;padding:4px 8px 4px 0;text-align:left;vertical-align:top;color:var(--mut);font-weight:800}
+.note-meta td{padding:4px 0;overflow-wrap:anywhere}
+.note-trans{margin:10px 0;padding:9px 12px;border-radius:12px;background:#FFF6DC;border:1px solid #F2D58A;color:#5C4300}
+.note-trans b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8A5A00}
+.note-warn{padding:8px 11px;border-radius:12px;background:var(--violet-t);font-size:12.5px}
+.note-foot{margin:14px 0 4px;padding-top:8px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut)}
+@media print{
+  body.printing-note>*:not(.site-modal){display:none!important}
+  body.printing-note{background:#fff!important}
+  body.printing-note .site-modal{position:static;display:block;background:none}
+  body.printing-note .site-sheet{max-width:none;max-height:none;overflow:visible;padding:0;box-shadow:none;border-radius:0;background:#fff;color:#000}
+  body.printing-note .no-print{display:none!important}
+  body.printing-note .note-doc{color:#000}
+  body.printing-note .item .body, body.printing-note .cmp-row{break-inside:avoid}
+}

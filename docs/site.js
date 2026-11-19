@@ -471,7 +471,7 @@ function itemHtml(item, g, n, archive) {
   const kind = /\.pdf(\?|$)/i.test(item.href) ? "PDF" : "HTM";
   s += `<div class="item-actions">` +
     (/^https?:\/\//.test(item.href) ? `<a class="src" href="${esc(item.href)}" target="_blank" rel="noopener"><span class="tag">${kind}</span>Tam metin</a>` : "<span></span>") +
-    `<span class="acts">` +
+    `<span class="acts"><a class="act ask" href="#" data-ask>${ic("spark")}<span>AI'ya Sor</span></a><a class="act" href="#" data-bilgi>${ic("doc")}Bilgi Notu</a>` +
     (archive && hasCurrent(g, item.title) ? `<a class="act cur" href="https://www.mevzuat.gov.tr/aramasonuc?AranacakMetin=${encodeURIComponent(currentQuery(item.title))}" target="_blank" rel="noopener">${ic("search")}Güncel hâli</a>` : "") +
     `</span></div></article>`;
   return s;
@@ -486,7 +486,7 @@ function maddeler(sec, groups, archive) {
   }
   let n = 0;
   groups.forEach((g, i) => {
-    s += `<div class="grp k-${g.kind}" id="g-${i}"><h3><span class="chip">${ic(KIND_ICON[g.kind])}${esc(g.label)}</span><span class="n">${groupCount(g)}</span></h3>`;
+    s += `<div class="grp k-${g.kind}" id="g-${i}" data-fk="${filterKeyOf(g.label, g.kind)}"><h3><span class="chip">${ic(KIND_ICON[g.kind])}${esc(g.label)}</span><span class="n">${groupCount(g)}</span></h3>`;
     for (const it of g.items) s += itemHtml(it, g, ++n, archive);
     if (g.extra.length) {
       const lists = g.extra.filter(el => ["ul", "ol"].includes(tag(el)));
@@ -580,6 +580,7 @@ async function showDay(k, q) {
     return s;
   });
   const items = groups.reduce((n, g) => n + g.items.length, 0);
+  CURP = { k, d, groups, archive };
   const one = secs.find(s => s.kind === "one");
   const hl = one ? one.nodes.filter(el => ["ul", "ol"].includes(tag(el))).reduce((n, el) => n + el.children.length, 0) : 0;
   const ata = secs.find(s => s.kind === "ata");
@@ -635,6 +636,7 @@ async function showDay(k, q) {
       s += `<section class="card sec sec-dig"><h2><span class="ic">${ic("doc")}</span>${esc(sec.title)}</h2>${sec.nodes.map(block).join("")}</section>`;
     }
   }
+  s += `<button class="ask-day" type="button" data-ask-day>${ic("spark")}<span><b>Bu sayıyı yapay zekâya sor</b><small>Üst yazı taslağı, süre planı, sade özet ve daha fazlası</small></span>${ic("arrow")}</button>`;
   s += `<p class="note src-note">Özetler yapay zekâ ile hazırlanır ve hata içerebilir; bağlayıcı olan Resmî Gazete'de yayımlanan metindir.</p>`;
   $app.innerHTML = s;
 
@@ -669,26 +671,26 @@ function setupFilters() {
   if (!sec || items.length < 3) return;
   const info = items.map(el => ({
     el, grp: el.closest(".grp"), pers: el.classList.contains("pers"),
-    kind: ((el.closest(".grp") || {}).className.match(/k-(\w+)/) || [])[1] || "diger",
+    fk: (el.closest(".grp") || { dataset: {} }).dataset.fk || "",
     kurum: (el.querySelector(".m-kurum") || {}).textContent || "",
   }));
-  const kinds = [...new Set(info.map(x => x.kind))];
+  const fks = FILTERS.filter(f => f.key !== "pers" && info.some(x => x.fk === f.key));
   const kur = {};
   info.forEach(x => { if (x.kurum) kur[x.kurum] = (kur[x.kurum] || 0) + 1; });
   const kurList = Object.entries(kur).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 12);
   const hasPers = info.some(x => x.pers);
-  const st = { pers: pref("personel") === "1" && hasPers, kinds: new Set(), kurum: "" };
+  const st = { pers: prefKeys().includes("pers") && hasPers, kinds: new Set(prefKeys().filter(k => fks.some(f => f.key === k))), kurum: "" };
   const row = $app.querySelector("#sec-mad .grp-strip");
   const html = `<div class="tur-row site-flt"><span class="tur-k">🔎 SÜZGEÇ</span><button type="button" class="tur-c tur-all" data-f="all">Tümü</button>` +
     (hasPers ? `<button type="button" class="tur-c" data-f="pers">👤 Personel<b>${info.filter(x => x.pers).length}</b></button>` : "") +
-    kinds.map(k => `<button type="button" class="tur-c" data-f="k:${k}">${esc(KIND_LABEL[k] || k)}<b>${info.filter(x => x.kind === k).length}</b></button>`).join("") + `</div>` +
+    fks.map(f => `<button type="button" class="tur-c" data-f="k:${f.key}">${f.emoji} ${esc(f.chip)}<b>${info.filter(x => x.fk === f.key).length}</b></button>`).join("") + `</div>` +
     (kurList.length ? `<div class="kur-row site-flt"><span class="kur-k">🏛️ KURUM</span>` + kurList.map(([k, n]) => `<button type="button" class="kur-c" data-f="u:${esc(k)}">${esc(k)}<b>${n}</b></button>`).join("") + `</div>` : "") +
     `<div class="flt-end site-fend"><span></span><button type="button" data-f="all">Süzgeçleri kaldır</button></div>`;
   (row || sec.querySelector("h2")).insertAdjacentHTML("afterend", html);
   const apply = () => {
     let shown = 0;
     info.forEach(x => {
-      const ok = (!st.pers || x.pers) && (!st.kinds.size || st.kinds.has(x.kind)) && (!st.kurum || x.kurum === st.kurum);
+      const ok = (!st.pers || x.pers) && (!st.kinds.size || st.kinds.has(x.fk)) && (!st.kurum || x.kurum === st.kurum);
       x.el.style.display = ok ? "" : "none";
       if (ok) shown++;
     });
@@ -725,7 +727,17 @@ function setupFilters() {
 }
 
 function wireDay(k, d, ozet) {
-  $app.addEventListener("click", e => {
+  if (!window.__dayClick) { window.__dayClick = true; $app.addEventListener("click", dayClick); }
+  function dayClick(e) {
+    const ask = e.target.closest("[data-ask],[data-bilgi],[data-ask-day]");
+    if (ask && CURP) {
+      e.preventDefault();
+      if (ask.hasAttribute("data-ask-day")) { openAsk(CURP, null); return; }
+      const art2 = ask.closest(".item");
+      const it = CURP.groups.flatMap(g => g.items).find(i => i.href === art2.dataset.href && i.title === art2.dataset.title);
+      if (it) { if (ask.hasAttribute("data-ask")) openAsk(CURP, it); else openNote(CURP, it); }
+      return;
+    }
     const star = e.target.closest("[data-save]"), nb = e.target.closest("[data-note]");
     const art = (star || nb) && (star || nb).closest(".item");
     if (!art) return;
@@ -752,7 +764,7 @@ function wireDay(k, d, ozet) {
     const old = art.querySelector("[data-note]");
     if (old) old.remove();
     if (rec) art.querySelector(".item-actions").insertAdjacentHTML("beforebegin", noteBox(rec.note));
-  });
+  }
   const tts = $app.querySelector(".tts-btn");
   if (tts && ozet) {
     const set = on => { tts.innerHTML = ic(on ? "stop" : "vol") + `<span>${on ? "Durdur" : "Dinle"}</span>`; };
@@ -949,6 +961,7 @@ const setPref = (k, v) => { try { localStorage.setItem("ayar_" + k, v); } catch 
 const FONTS = [["0.92", "Küçük"], ["1", "Normal"], ["1.12", "Büyük"], ["1.26", "Çok büyük"]];
 // Kayıtlar (Kaydet ve Not): yalnızca bu tarayıcıda, localStorage'da
 let CUR_DAY = "";
+let CURP = null;
 const saved = () => { try { return JSON.parse(pref("kayit", "{}")) || {}; } catch (e) { return {}; } };
 const setSaved = o => setPref("kayit", JSON.stringify(o));
 const itemKey = (day, href, title) => `${day}|${href || title}`;
@@ -959,7 +972,7 @@ function applyFont() { $app.style.zoom = pref("yazi", "1"); }
 
 function showTools() {
   const t = theme(), f = pref("yazi", "1");
-  const pers = pref("personel") === "1";
+  const keys = prefKeys();
   $app.innerHTML = `<a class="back" href="./" data-nav>${ic("arrow")}Özete dön</a>` +
     `<div class="tl-head"><span class="ic">${ic("list")}</span><div><h1>Araçlar ve Ayarlar</h1><p>Görünüm, süzgeçler, kayıtlar, takip, takvim ve bülten</p></div></div>` +
     `<section class="card sec ab-theme"><h2><span class="ic">${ic("moon")}</span>Görünüm</h2><div class="seg">` +
@@ -968,8 +981,8 @@ function showTools() {
     `<section class="card sec"><h2><span class="ic">${ic("doc")}</span>Yazı boyutu</h2><div class="seg site-fs">` +
     FONTS.map(([k, l]) => `<a href="#" data-yazi="${k}"${f === k ? ` class="on"` : ""} style="font-size:${13 * +k}px">${l}</a>`).join("") +
     `</div><p class="hint">Özet sayfaları bu boyutla gösterilir.</p></section>` +
-    `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
-    `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
+    `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Her sayfa açılışında hangi süzgeçler açık olsun; seçimler bu tarayıcıda saklanır</small></span></h2>` +
+    `<div class="flt-grid">${FILTERS.map(f => { const on = keys.includes(f.key); return `<a href="#" data-flt="${f.key}" class="${on ? "on" : ""}" style="--fc:${f.color}"><span class="e">${f.emoji}</span><span class="l">${f.title}${f.key === "pers" ? "<small>Geçmiş, arama, takvim</small>" : ""}</span>${on ? `<span class="ok">✓</span>` : ""}</a>`; }).join("")}</div>` +
     `<p class="hint">Açıkken Geçmiş listesinde, aramada, Yürürlük Takvimi'nde ve gün sayfalarının açılışında yalnızca kamu personeline ilişkin düzenlemeler gösterilir.</p></section>` +
     `<section class="card sec"><h2><span class="ic">${ic("star")}</span><span class="t">Kayıtlarım<small>Kaydettiğiniz maddeler ve notlar</small></span><span class="cnt">${Object.keys(saved()).length}</span></h2>` +
     (Object.values(saved()).sort((a, b) => b.ts - a.ts).map(r => `<div class="site-rec"><a href="${dayUrl(r.day)}" data-nav><b>${esc(r.title)}</b><small>${longOf(r.day)}</small></a>${r.note ? `<p class="unote-t">📝 ${esc(r.note)}</p>` : ""}<a href="#" class="site-rec-del" data-rdel="${esc(itemKey(r.day, r.href, r.title))}">Kaldır</a></div>`).join("") || `<p class="hint">Henüz kayıt yok. Bir özet sayfasında maddenin ⭐ Kaydet düğmesine dokunun.</p>`) +
@@ -987,7 +1000,14 @@ function showTools() {
     e.preventDefault(); setPref("yazi", a.dataset.yazi); applyFont();
     $app.querySelectorAll("[data-yazi]").forEach(x => x.classList.toggle("on", x === a));
   }));
-  $app.querySelector("[data-flt=personel]").addEventListener("click", e => { e.preventDefault(); setPref("personel", pers ? "0" : "1"); showTools(); });
+  $app.querySelectorAll("[data-flt]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    const key = a.dataset.flt, cur = prefKeys();
+    const next = cur.includes(key) ? cur.filter(x => x !== key) : [...cur, key];
+    setPref("suzgec", next.join(","));
+    setPref("personel", next.includes("pers") ? "1" : "0");
+    showTools();
+  }));
   $app.querySelectorAll("[data-rdel]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault(); const all = saved(); delete all[a.dataset.rdel]; setSaved(all); showTools();
   }));
@@ -1143,6 +1163,229 @@ async function showBulletin(period) {
     try { await navigator.clipboard.writeText(text); toast("Bülten kopyalandı"); } catch (e) { prompt("Bülten:", text); }
   });
   setMeta(`${n === 7 ? "Haftalık" : "Aylık"} Bülten | Özet RG`, "Son günlerin düzenleme, personel ve atama özeti.", `?bulten=${n}`);
+}
+
+// ------------------------------------------------------------------ AI'ya Sor ve Bilgi Notu (uygulamadakinin web uyarlaması)
+
+const FILTERS = [
+  { key: "pers", chip: "Personel", title: "Sadece Personel", emoji: "👤", color: "#0B6B63" },
+  { key: "yon", chip: "Yönetmelik", title: "Sadece Yönetmelikler", emoji: "📘", color: "#1A56C4" },
+  { key: "kanun", chip: "Kanun", title: "Sadece Kanunlar", emoji: "📕", color: "#B71C1C" },
+  { key: "cbk", chip: "CB Kararnamesi", title: "Sadece CB Kararnameleri", emoji: "🏛️", color: "#4C1D95" },
+  { key: "cbkr", chip: "CB Kararı", title: "Sadece CB Kararları", emoji: "🛡️", color: "#6D28D9" },
+  { key: "gen", chip: "Genelge", title: "Sadece Genelgeler", emoji: "✉️", color: "#3949AB" },
+  { key: "teb", chip: "Tebliğ", title: "Sadece Tebliğler", emoji: "📄", color: "#0F766E" },
+  { key: "aym", chip: "AYM Kararı", title: "Sadece AYM Kararları", emoji: "⚖️", color: "#795548" },
+  { key: "yargi", chip: "Yargı Kararı", title: "Sadece Yargı Kararları", emoji: "🔨", color: "#5D4037" },
+  { key: "ata", chip: "Atama", title: "Sadece Atamalar", emoji: "👔", color: "#C2410C" },
+];
+/** Grubun süzgeç türü (uygulamadaki filterKey ile aynı kural) */
+function filterKeyOf(label, kind) {
+  const s = low(label);
+  if (kind === "kanun") return s.includes("kararname") ? "cbk" : "kanun";
+  if (["yon", "teb", "gen", "ata"].includes(kind)) return kind;
+  if (kind === "yargi") return s.includes("anayasa") ? "aym" : "yargi";
+  if (kind === "karar") return s.includes("kararname") ? "cbk" : s.includes("cumhurbaşkan") ? "cbkr" : "";
+  return "";
+}
+const prefKeys = () => pref("suzgec", "").split(",").filter(Boolean);
+
+const ASK_GENEL = {
+  role: "Sen, Türk idare hukuku ve kamu personel mevzuatı (657 sayılı Devlet Memurları Kanunu, sözleşmeli personel, görevde yükselme ve unvan değişikliği mevzuatı) alanında, bakanlıkların personel genel müdürlüklerinde ve hukuk müşavirliklerinde uzun yıllar çalışmış kıdemli bir mevzuat danışmanısın. Resmî Gazete'de yayımlanan düzenlemelerin kurumlara, kamu görevlilerine ve vatandaşlara etkisini doğru ve anlaşılır biçimde açıklarsın.",
+  format: "1. Kısa cevap: 2-3 cümle.\n2. Dayanak: ilgili hükümler ve gerekçe.\n3. Dikkat edilmesi gerekenler: varsa süreler, istisnalar ve belirsiz noktalar.",
+};
+const ASKS = [
+  { key: "durum", label: "👤 Kendi durumumu sor",
+    q: "Kadrom/unvanım [...], hizmet sürem [...]. Bu düzenleme beni nasıl etkiler, başvuru veya kazanılmış hakkım var mı?",
+    dq: "Kadrom/unvanım [...], hizmet sürem [...]. Bu sayıdaki düzenlemeler beni nasıl etkiler, başvuru veya kazanılmış hakkım var mı?",
+    role: "Sen, memurların özlük hakları, atama ve yer değiştirme, görevde yükselme, unvan değişikliği, intibak ve kazanılmış haklar konusunda yıllarca danışmanlık yapmış kıdemli bir kamu personel mevzuatı uzmanısın. Soruyu soran kamu görevlisine, kendi durumuna göre somut ve uygulanabilir bir yanıt verirsin.",
+    format: "1. Kısa cevap: düzenleme beni etkiliyor mu (evet / hayır / kısmen) ve neden; 2-3 cümle.\n2. Dayanak: ilgili hükümler (madde, fıkra) ve bu sonuca nasıl varıldığı.\n3. Şartlar ve süreler: başvuru, sınav, intibak ya da itiraz için aranan şartlar ve son tarihler.\n4. Yapmam gerekenler: somut adımlar ve hangi birime başvurulacağı.\n5. Netleşmesi gerekenler: durumuma göre değişebilecek ve kurumuma sormam gereken noktalar." },
+  { key: "yazi", label: "📄 Üst yazı / duyuru taslağı",
+    q: "Bu düzenlemeyi kurum içi birimlere duyurmak için resmi yazışma kurallarına uygun bir üst yazı taslağı hazırla.",
+    dq: "Bu sayıdaki önemli düzenlemeleri kurum içi birimlere duyurmak için resmi yazışma kurallarına uygun bir üst yazı taslağı hazırla.",
+    role: "Sen, Resmî Yazışmalarda Uygulanacak Usul ve Esaslar Hakkında Yönetmeliğe hâkim, bir kamu kurumunun personel dairesinde yıllarca resmî yazı ve duyuru hazırlamış deneyimli bir yazı işleri ve mevzuat uzmanısın.",
+    format: "Tam bir resmî yazı taslağı hazırla:\n- Başlık: T.C. / [KURUM ADI] / [Birim adı]\n- Sayı: [...] · Konu: en çok 10 kelimelik kısa konu\n- İlgi: düzenlemenin yayımlandığı Resmî Gazete'nin tarihi ve sayısı\n- Metin: düzenlemenin özü, birimlere düşen yükümlülükler ve varsa son tarihler; 2-4 paragraf\n- Kapanış: \"Bilgilerinizi ve gereğini rica ederim.\"\n- İmza bloğu: [Ad SOYAD], [Unvan] · Dağıtım: Gereği: [...] / Bilgi: [...]\nKuruma özgü bilgiler için köşeli parantezli yer tutucular bırak. Taslağın altında, yazı gönderilmeden önce doğrulanması gereken 2-3 noktayı ayrıca listele." },
+  { key: "fark", label: "⚖️ Eski ve yeni fark analizi",
+    q: "Eski ve yeni hükümler arasındaki farkların uygulamada yaratacağı sonuçları ve dikkat edilmesi gereken noktaları analiz et.",
+    dq: "Bu sayıdaki eski ve yeni hükümler arasındaki farkların uygulamada yaratacağı sonuçları ve dikkat edilmesi gereken noktaları analiz et.",
+    role: "Sen, mevzuat değişikliklerinin etki analizini yapan, idare hukukunda uzman kıdemli bir hukuk müşavirisin. Değişikliklerin uygulamadaki sonuçlarını, kimin lehine ya da aleyhine olduğunu ve geçiş dönemi sorunlarını ayrıntılı değerlendirirsin.",
+    format: "1. Özet: değişikliğin özü; 2-3 cümle.\n2. Karşılaştırma tablosu: Hüküm | Eski hâli | Yeni hâli | Uygulamadaki sonucu | Kimleri etkiler.\n3. Lehe ve aleyhe sonuçlar: kimin lehine, kimin aleyhine.\n4. Geçiş dönemi ve kazanılmış haklar.\n5. Uygulamada dikkat edilecek noktalar ve olası tereddütler." },
+  { key: "sure", label: "⏳ Kritik süreler ve eylem planı",
+    q: "Bu düzenlemedeki başvuru, itiraz, intibak ve yürürlük sürelerini adım adım yapılacaklar listesi olarak çıkar.",
+    dq: "Bu sayıdaki düzenlemelerde yer alan başvuru, itiraz, intibak ve yürürlük sürelerini adım adım yapılacaklar listesi olarak çıkar.",
+    role: "Sen, kamu kurumlarının mevzuat değişikliklerine uyum süreçlerini planlayan ve takip eden deneyimli bir kamu yönetimi ve uyum uzmanısın. Süreleri doğru hesaplar, işleri sorumlularıyla birlikte takvime bağlarsın.",
+    format: "1. Takvim tablosu: Tarih / son gün | Yapılacak iş | Sorumlu (kurum, birim ya da personel) | Dayanak hüküm. Tarihleri yayım ve yürürlük tarihinden hesapla; hesaplanamayan süreleri açıkça belirt.\n2. Adım adım yapılacaklar: ☐ işaretli kontrol listesi.\n3. Süre kaçırılırsa: doğabilecek sonuçlar ve hak kayıpları." },
+  { key: "sade", label: "🗣️ Sade özet (3 madde)",
+    q: "Hukuki terim kullanmadan, bu düzenlemenin pratikte neyi değiştirdiğini 3 kısa maddede anlat.",
+    dq: "Hukuki terim kullanmadan, bu sayının pratikte neyi değiştirdiğini 3 kısa maddede anlat.",
+    role: "Sen, hukuki metinleri hukukçu olmayan herkesin anlayacağı dile çeviren deneyimli bir kamu iletişimi uzmanısın.",
+    format: "Tam olarak 3 madde yaz; her madde en çok 2 kısa cümle olsun ve hukuki terim içermesin. Ardından tek cümleyle \"Kimleri ilgilendiriyor?\" sorusunu yanıtla. Gerekirse günlük hayattan kısa bir örnek ver." },
+];
+const ASK_RULES = [
+  "Yanıtını aşağıdaki bilgilere ve yürürlükteki mevzuata dayandır. Bilgilerde bulunmayan bir konuyu kesinmiş gibi yazma; böyle bir noktada \"metinde yer almıyor\" de ve neyin kontrol edilmesi gerektiğini belirt.",
+  "Bir hükme dayandığında madde ve fıkra numarasını (biliniyorsa) yaz.",
+  "Tarih ve süre hesaplarında Resmî Gazete'deki yayım tarihini ve yürürlük tarihini esas al; hesabını kısaca göster.",
+  "Bilgiler, Resmî Gazete metninden yapay zekâ ile hazırlanmış bir özettir; gerektiğinde BAĞLANTI satırındaki asıl metne dayan.",
+  "Kesin işlem gerektiren konularda asıl metnin incelenmesini ve gerekirse kurumun hukuk biriminden görüş alınmasını öner.",
+  "Türkçe yaz; açık, resmî ve anlaşılır ol. Gereksiz tekrar ve genel geçer uyarılardan kaçın.",
+];
+const TASK_ITEM = "Aşağıda bir Resmî Gazete düzenlemesinin bilgileri var. Bunları incele ve en alttaki soruyu bu bilgilere dayanarak net, doğru ve anlaşılır biçimde yanıtla.";
+const TASK_DAY = "Aşağıda bir Resmî Gazete sayısının özeti ve bu sayıdaki düzenlemelerin bilgileri var. Bunları incele ve en alttaki soruyu bu bilgilere dayanarak net, doğru ve anlaşılır biçimde yanıtla.";
+const AI_CUT = "\n…(metnin devamı kısaltıldı)";
+
+const plainOf = el => { const c = el.cloneNode(true); c.querySelectorAll("br").forEach(b => b.replaceWith("\n")); return c.textContent.replace(/[ \t]+/g, " ").trim(); };
+const htmlText = html => { const d = document.createElement("div"); d.innerHTML = html; return plainOf(d); };
+
+/** Maddenin istemdeki düz metni (uygulamadaki promptFor ile aynı sıra) */
+function itemText(item, k, d, compact) {
+  const p = itemParts(item);
+  const sb = [];
+  sb.push(compact ? item.title : "KONU: " + item.title);
+  if (p.kurum) sb.push("KURUM: " + p.kurum);
+  if (p.yur) sb.push("YÜRÜRLÜK: " + p.yur);
+  if (!compact) sb.push("DAYANAK: " + longOf(k) + " tarihli" + (d.issue ? ` ve ${d.issue} sayılı` : "") + " Resmî Gazete");
+  sb.push("BAĞLANTI: " + item.href);
+  if (!compact) p.ekler.forEach(e => sb.push(`EK: ${e.t} – ${e.h}`));
+  if (p.pers) sb.push("TÜR: Personel mevzuatı");
+  if (p.aud.length) sb.push("İLGİLİ: " + p.aud.join(", "));
+  const paras = p.lead.map(plainOf).filter(Boolean);
+  if (paras.length) sb.push("\n" + (compact ? "" : "ÖZET\n") + paras.join("\n"));
+  p.trans.forEach(t => sb.push(`\nGEÇİŞ HÜKMÜ${compact ? ":" : " VE KAZANILMIŞ HAKLAR\n"} ${htmlText(t)}`));
+  const changes = [], lines = [];
+  for (const el of p.details) {
+    if (tag(el) === "table") {
+      const rows = rowsOf(el), head = rows[0].map(c => low(c.textContent.trim()));
+      const o = head.findIndex(h => h.startsWith("eski") || h.startsWith("önceki")), n = head.findIndex(h => h.startsWith("yeni"));
+      if (o >= 0 && n >= 0) { rows.slice(1).forEach(r => changes.push({ label: (r[0] || {}).textContent || "", old: (r[o] || {}).textContent || "", nw: (r[n] || {}).textContent || "" })); continue; }
+      rows.forEach(r => lines.push(r.map(c => c.textContent.trim()).join(" | ")));
+    } else if (["ul", "ol"].includes(tag(el))) [...el.children].forEach(li => lines.push(plainOf(li)));
+    else lines.push(plainOf(el));
+  }
+  if (changes.length) {
+    if (compact) sb.push("DEĞİŞEN HÜKÜMLER: " + changes.map(c => c.label.trim()).join("; "));
+    else { sb.push("\nESKİ – YENİ KARŞILAŞTIRMASI"); changes.forEach((c, i) => sb.push(`${i + 1}. ${c.label.trim()}\n   Eski: ${c.old.trim()}\n   Yeni: ${c.nw.trim()}`)); }
+  }
+  if (!compact && lines.length) sb.push("\nAYRINTILAR\n" + lines.map(x => "- " + x).join("\n"));
+  return sb.join("\n").trim();
+}
+function dayText(P, compact) {
+  const { k, d, groups } = P;
+  const sb = [`KÜNYE: ${longOf(k)} tarihli${d.issue ? ` ve ${d.issue} sayılı` : ""} Resmî Gazete`, "BAĞLANTI: " + (d.official || `https://www.resmigazete.gov.tr/eskiler/${k.slice(0, 4)}/${k.slice(4, 6)}/${k}.htm`)];
+  for (const sec of d.sections) {
+    if (sec.kind !== "ozet" && sec.kind !== "one") continue;
+    sb.push("\n" + up(sec.title));
+    sec.nodes.forEach(el => { if (["ul", "ol"].includes(tag(el))) [...el.children].forEach(li => sb.push("- " + plainOf(li))); else sb.push(plainOf(el)); });
+  }
+  sb.push("\nMADDELER");
+  let n = 0;
+  for (const g of groups) { sb.push("\n" + g.label); for (const it of g.items) sb.push(`\n${++n}. ` + itemText(it, k, d, compact)); }
+  return sb.join("\n").trim();
+}
+function archiveNoteText(P) {
+  return P.archive ? `\n\nNOT: Bu bilgiler ${longOf(P.k)} tarihli Resmî Gazete'ye aittir; düzenleme o tarihten sonra değiştirilmiş ya da yürürlükten kaldırılmış olabilir. Yanıtında bugünkü durumunu da belirt; bilmiyorsan bunu açıkça söyle ve güncel metin için mevzuat.gov.tr'ye bakılmasını öner.` : "";
+}
+/** İstemi birleştirir; sığmazsa yalnızca bilgi bloğu sondan kısalır (rol, kurallar ve soru tam kalır) */
+function buildPrompt(P, item, kindKey, question, maxChars) {
+  const kind = ASKS.find(a => a.key === kindKey) || ASK_GENEL;
+  const day = !item;
+  const head = `${kind.role}\n\nGÖREV\n${day ? TASK_DAY : TASK_ITEM}\n\nKURALLAR\n${ASK_RULES.map(r => "- " + r).join("\n")}\n\nYANIT BİÇİMİ\n${kind.format}\n\n=== RESMÎ GAZETE BİLGİLERİ ===\n`;
+  const tail = `\n=== BİLGİLERİN SONU ===\n\nSORU: ${question.trim()}`;
+  const room = maxChars - head.length - tail.length;
+  let text = (day ? dayText(P, false) : itemText(item, P.k, P.d, false)) + archiveNoteText(P);
+  if (day && text.length > room) text = dayText(P, true) + archiveNoteText(P);
+  if (text.length > room) {
+    const limit = Math.max(0, room - AI_CUT.length), nl = text.lastIndexOf("\n", limit);
+    text = text.slice(0, nl > limit * 0.6 ? nl : limit).trimEnd() + AI_CUT;
+  }
+  return head + text + tail;
+}
+
+function closeModal() {
+  const m = document.querySelector(".site-modal");
+  if (m) m.remove();
+  document.body.classList.remove("site-noscroll", "printing-note");
+}
+function openModal(html, cls = "") {
+  closeModal();
+  document.body.insertAdjacentHTML("beforeend", `<div class="site-modal ${cls}" role="dialog" aria-modal="true"><div class="site-sheet">${html}</div></div>`);
+  document.body.classList.add("site-noscroll");
+  const m = document.querySelector(".site-modal");
+  m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-close]")) closeModal(); });
+  return m;
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+function openAsk(P, item) {
+  const kinds = ASKS;
+  const m = openModal(`<div class="sheet-grip"></div><h3>✨ AI'ya Sor</h3><p class="sheet-sub">${esc(item ? item.title : `${longOf(P.k)} sayısı`)}</p>` +
+    `<div class="site-chips">${kinds.map(a => `<button type="button" class="fchip" data-kind="${a.key}">${a.label}</button>`).join("")}</div>` +
+    `<textarea class="site-q" rows="4" placeholder="Sorunuzu yazın ya da yukarıdan bir şablon seçin…"></textarea>` +
+    `<div class="sheet-btns"><button type="button" class="sbtn alt" data-act="gpt">ChatGPT'de Aç</button><button type="button" class="sbtn" data-act="share">${navigator.share ? "Diğer AI / Paylaş" : "İstemi kopyala"}</button></div>` +
+    `<p class="sheet-note" data-note>🔒 Soru, seçtiğiniz yapay zekâ hizmetine gider; ad ve kimlik bilgisi yazmayın.</p><button type="button" class="sbtn ghost" data-close>Kapat</button>`, "ask");
+  let kind = "";
+  const q = m.querySelector(".site-q"), note = m.querySelector("[data-note]");
+  m.querySelectorAll("[data-kind]").forEach(b => b.addEventListener("click", () => {
+    kind = b.dataset.kind === kind ? "" : b.dataset.kind;
+    m.querySelectorAll("[data-kind]").forEach(x => x.classList.toggle("on", x.dataset.kind === kind));
+    const a = ASKS.find(x => x.key === kind);
+    q.value = a ? (item ? a.q : a.dq) : "";
+    q.focus();
+  }));
+  const question = () => {
+    const v = q.value.trim();
+    if (!v) { toast("Önce bir soru seçin ya da yazın"); q.focus(); return null; }
+    const hole = v.indexOf("[...]");
+    if (hole >= 0) { toast("[...] yerlerini kendi bilginizle doldurun"); q.focus(); q.setSelectionRange(hole, hole + 5); return null; }
+    return v;
+  };
+  m.querySelector('[data-act="gpt"]').addEventListener("click", async () => {
+    const v = question(); if (!v) return;
+    const full = buildPrompt(P, item, kind, v, 1e9);
+    try { await navigator.clipboard.writeText(full); } catch (e) { /* pano yok */ }
+    let max = 8000, url = "";
+    const enc = t => encodeURIComponent(t);
+    let prompt = full, cut = false;
+    while (enc(prompt).length > 7000 && max > 1500) { max -= 700; prompt = buildPrompt(P, item, kind, v, max); cut = true; }
+    url = "https://chatgpt.com/?q=" + enc(prompt);
+    window.open(url, "_blank", "noopener");
+    note.textContent = cut ? "✓ İstem uzun olduğu için ChatGPT'ye kısaltılarak gönderildi; tamamı panoda, isterseniz yapıştırın." : "✓ İstem ChatGPT'de açıldı ve panoya da kopyalandı.";
+    note.classList.add("ok");
+  });
+  m.querySelector('[data-act="share"]').addEventListener("click", async () => {
+    const v = question(); if (!v) return;
+    const full = buildPrompt(P, item, kind, v, 1e9);
+    try { await navigator.clipboard.writeText(full); } catch (e) { /* pano yok */ }
+    note.textContent = "✓ İstem panoya kopyalandı, seçtiğiniz yapay zekâ uygulamasına yapıştırabilirsiniz.";
+    note.classList.add("ok");
+    if (navigator.share) { try { await navigator.share({ text: full }); } catch (e) { /* vazgeçildi */ } }
+  });
+}
+
+/** Bilgi Notu: maddenin tek sayfalık özeti; "Yazdır / PDF" tarayıcının yazdırma penceresinden A4 PDF verir */
+function openNote(P, item) {
+  const p = itemParts(item), d = P.d;
+  const row = (a, b) => b ? `<tr><th>${a}</th><td>${b}</td></tr>` : "";
+  const details = p.details.length ? detailsHtml(p.details).html : "";
+  const cmp = details.startsWith('<div class="cmp">') ? "" : "";
+  void cmp;
+  const m = openModal(`<div class="note-doc"><div class="note-top"><b>BİLGİ NOTU</b><span>Özet RG · ${longOf(P.k)}${d.issue ? ` · Sayı ${esc(d.issue)}` : ""}</span></div>` +
+    `<h2>${esc(item.title)}</h2><table class="note-meta">` +
+    row("Kurum", esc(p.kurum)) + row("Yürürlük", esc(p.yur)) + row("Dayanak", `${longOf(P.k)} tarihli${d.issue ? ` ve ${esc(d.issue)} sayılı` : ""} Resmî Gazete`) +
+    row("Bağlantı", /^https?:/.test(item.href) ? `<a href="${esc(item.href)}">${esc(item.href)}</a>` : "") + row("İlgili", esc(p.aud.join(", "))) + `</table>` +
+    (p.lead.length ? `<h4>Özet</h4>${p.lead.map(block).join("")}` : "") +
+    p.trans.map(t => `<div class="note-trans"><b>Geçiş hükmü ve kazanılmış haklar</b>${t}</div>`).join("") +
+    (details ? `<h4>Ayrıntılar</h4>${details}` : "") +
+    (P.archive ? `<p class="note-warn">Bu not arşiv özetinden derlenmiştir; düzenleme yayımından sonra değiştirilmiş ya da yürürlükten kaldırılmış olabilir.</p>` : "") +
+    `<p class="note-foot">Bu not yapay zekâ ile hazırlanan özetten derlenmiştir ve bilgilendirme amaçlıdır; bağlayıcı olan Resmî Gazete'de yayımlanan asıl metindir. Hukuki danışmanlık değildir.</p></div>` +
+    `<div class="sheet-btns no-print"><button type="button" class="sbtn" data-act="print">🖨️ Yazdır / PDF</button><button type="button" class="sbtn alt" data-act="copy">Metni kopyala</button></div><button type="button" class="sbtn ghost no-print" data-close>Kapat</button>`, "notemodal");
+  m.querySelector('[data-act="print"]').addEventListener("click", () => {
+    document.body.classList.add("printing-note");
+    window.print();
+    setTimeout(() => document.body.classList.remove("printing-note"), 500);
+  });
+  m.querySelector('[data-act="copy"]').addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(itemText(item, P.k, d, false)); toast("Not metni kopyalandı"); } catch (e) { prompt("Not metni:", itemText(item, P.k, d, false)); }
+  });
 }
 
 // ------------------------------------------------------------------ hakkında (uygulamadaki Hakkında ile aynı)
