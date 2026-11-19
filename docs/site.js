@@ -891,10 +891,13 @@ function wireDay(k, d, ozet) {
 }
 
 /** Aranan kelimeler sayfada işaretlenir; kapalı ayrıntılardaki eşleşmeler açılır */
+/** Türkçe harfleri sadeleştirir (ç→c, ğ→g, ı→i, ö→o, ş→s, ü→u): telefonda "doga" yazan da "doğa"yı bulsun */
+const FOLD = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a", "î": "i", "û": "u" };
+const fold = t => low(t).replace(/[çğıöşüâîû]/g, c => FOLD[c]).replace(/̇/g, "");
+const FOLD_CLASS = { c: "cçCÇ", g: "gğGĞ", i: "iıİI", o: "oöOÖ", s: "sşSŞ", u: "uüUÜ", a: "aâAÂ" };
 function trPattern(tok) {
-  return [...tok].map(ch => {
-    if (ch === "i" || ch === "İ") return "[iİ]";
-    if (ch === "ı" || ch === "I") return "[ıI]";
+  return [...fold(tok)].map(ch => {
+    if (FOLD_CLASS[ch]) return `[${FOLD_CLASS[ch]}]`;
     if (/[\p{L}]/u.test(ch)) return `[${ch}${up(ch)}]`;
     return ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }).join("");
@@ -1012,6 +1015,8 @@ async function showList(q, tur) {
   if (location.hash === "#tarih") $app.querySelector("#tarih").scrollIntoView({ block: "center" });
 }
 
+const FOLD_CACHE = {};
+const foldedMetin = k => FOLD_CACHE[k] || (FOLD_CACHE[k] = fold((PARTS[k] || {}).metin || ""));
 function renderDays(q, tur) {
   const box = document.getElementById("days");
   const arch = new Set(INDEX.arsiv_gunleri || []);
@@ -1019,8 +1024,8 @@ function renderDays(q, tur) {
   if (tur === "arsiv") days = days.filter(k => arch.has(k));
   else if (tur === "gunluk") days = days.filter(k => !arch.has(k));
   if (pref("personel") === "1") days = days.filter(k => PARTS[k] && PARTS[k].personel);
-  const toks = q ? queryTokens(q) : [];
-  if (toks.length) days = days.filter(k => PARTS[k] && toks.every(t => (PARTS[k].metin || "").includes(t)));
+  const toks = q ? queryTokens(q).map(fold) : [];
+  if (toks.length) days = days.filter(k => PARTS[k] && toks.every(t => foldedMetin(k).includes(t)));
   const perMonth = {};
   for (const k of days) perMonth[k.slice(0, 6)] = (perMonth[k.slice(0, 6)] || 0) + 1;
   let s = pref("personel") === "1" ? `<a class="card web fltnote" href="?araclar" data-nav>${ic("person")}<span><b>Sadece Personel açık</b><small>Yalnızca kamu personeline ilişkin düzenleme olan günler · Araçlar'dan değiştir</small></span>${ic("chev")}</a>` : "";
@@ -1047,7 +1052,7 @@ function renderDays(q, tur) {
     if (p.sayi) bits.push(`Sayı ${esc(p.sayi)}`);
     bits.push(a ? "🗄️ Arşiv özeti" : p.duzenleme ? `${p.duzenleme} düzenleme` : "");
     if (p.personel) bits.push("👤 Personel");
-    if (watchWords().some(w => queryTokens(w).every(t => (p.metin || "").includes(t)))) bits.push("🎯 Takibinizde");
+    if (watchWords().some(w => queryTokens(w).map(fold).every(t => foldedMetin(k).includes(t)))) bits.push("🎯 Takibinizde");
     s += `<a class="day card${a ? " arc" : ""}" href="${dayUrl(k, q)}" data-nav><span class="dcal"><i>${mon3(k)}</i><b>${dayOf(k)}</b></span>` +
       `<span class="dtx"><b>${longOf(k)}</b><small>${bits.filter(Boolean).join(" · ")}</small>` +
       (p.onizleme ? `<span class="pv">${esc(p.onizleme)}</span>` : "") + `</span>${ic("chev")}</a>`;
