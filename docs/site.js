@@ -371,8 +371,16 @@ function appointments(sec) {
 
 // ------------------------------------------------------------------ maddeler
 
+const PERSONNEL_WORDS = ["personel", "görevde yükselme", "unvan değişikliği", "ünvan değişikliği", "memur", "sözleşmeli", "özlük", "kadro"];
+const PERSONNEL_REG_WORDS = ["atama", "yer değiştirme", "uzman yardımcı", "müfettiş", "denetçi", "hizmet içi eğitim"];
+function isPersonnelTitle(title) {
+  const t = low(title);
+  return PERSONNEL_WORDS.some(w => t.includes(w)) || (t.includes("yönetmeli") && PERSONNEL_REG_WORDS.some(w => t.includes(w)));
+}
+const isPersonnelMarker = el => tag(el) === "p" && /^personel mevzuatı[.:]?$/.test(low(el.textContent.trim())) && el.children.length === 1;
+
 function itemParts(item) {
-  const r = { kurum: "", yur: "", aud: [], ekler: [], trans: [], lead: [], details: [] };
+  const r = { kurum: "", yur: "", aud: [], ekler: [], trans: [], lead: [], details: [], pers: isPersonnelTitle(item.title) };
   for (const el of item.nodes) {
     const t = tag(el);
     const lead = t === "p" ? low(boldLead(el).replace(/:\s*$/, "")) : "";
@@ -383,6 +391,7 @@ function itemParts(item) {
       }
       continue;
     }
+    if (isPersonnelMarker(el)) { r.pers = true; continue; }
     if (lead === "ekler") {
       r.ekler = [...el.querySelectorAll("a[href]")].filter(a => /^https?:\/\//.test(a.getAttribute("href")))
         .map(a => ({ t: a.textContent.trim(), h: a.getAttribute("href") }));
@@ -435,7 +444,7 @@ const hasCurrent = (g, title) => ["kanun", "yon", "teb", "gen"].includes(g.kind)
   (g.kind === "karar" && /yönetmelik|esas|usul|tarife|karar(?:name)?$/i.test(currentQuery(title)) && !/atama/i.test(title));
 function itemHtml(item, g, n, archive) {
   const p = itemParts(item);
-  const pers = p.aud.length > 0;
+  const pers = p.pers || p.aud.length > 0;
   let chips = "";
   if (pers) chips += `<span class="tagp">${ic("person")}Personel</span>`;
   if (p.kurum) chips += `<span class="mchip m-kurum">${ic("bank")}${esc(p.kurum)}</span>`;
@@ -626,6 +635,7 @@ async function showDay(k, q) {
     lead ? lead.slice(0, 158) + (lead.length > 158 ? "…" : "") : `${longOf(k)} tarihli Resmî Gazete'nin özeti.`, dayUrl(k));
 
   wireDay(k, d, ozet);
+  setupFilters();
   const ww = watchWords();
   if (ww.length) {
     let hits = 0;
@@ -642,6 +652,68 @@ async function showDay(k, q) {
     if (jump) jump.addEventListener("click", e => { e.preventDefault(); const f = $app.querySelector(".item .m-radar"); if (f) f.closest(".item").scrollIntoView({ block: "center" }); });
   }
   if (q) highlight(q);
+}
+
+/** Gün sayfasındaki 🔎 SÜZGEÇ ve 🏛️ KURUM satırları (uygulamadakinin web hâli): tür, personel ve kuruma göre madde süzme. */
+function setupFilters() {
+  const sec = $app.querySelector("#sec-mad");
+  const items = [...$app.querySelectorAll("#sec-mad .item")];
+  if (!sec || items.length < 3) return;
+  const info = items.map(el => ({
+    el, grp: el.closest(".grp"), pers: el.classList.contains("pers"),
+    kind: ((el.closest(".grp") || {}).className.match(/k-(\w+)/) || [])[1] || "diger",
+    kurum: (el.querySelector(".m-kurum") || {}).textContent || "",
+  }));
+  const kinds = [...new Set(info.map(x => x.kind))];
+  const kur = {};
+  info.forEach(x => { if (x.kurum) kur[x.kurum] = (kur[x.kurum] || 0) + 1; });
+  const kurList = Object.entries(kur).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const hasPers = info.some(x => x.pers);
+  const st = { pers: pref("personel") === "1" && hasPers, kinds: new Set(), kurum: "" };
+  const row = $app.querySelector("#sec-mad .grp-strip");
+  const html = `<div class="tur-row site-flt"><span class="tur-k">🔎 SÜZGEÇ</span><button type="button" class="tur-c tur-all" data-f="all">Tümü</button>` +
+    (hasPers ? `<button type="button" class="tur-c" data-f="pers">👤 Personel<b>${info.filter(x => x.pers).length}</b></button>` : "") +
+    kinds.map(k => `<button type="button" class="tur-c" data-f="k:${k}">${esc(KIND_LABEL[k] || k)}<b>${info.filter(x => x.kind === k).length}</b></button>`).join("") + `</div>` +
+    (kurList.length ? `<div class="kur-row site-flt"><span class="kur-k">🏛️ KURUM</span>` + kurList.map(([k, n]) => `<button type="button" class="kur-c" data-f="u:${esc(k)}">${esc(k)}<b>${n}</b></button>`).join("") + `</div>` : "") +
+    `<div class="flt-end site-fend"><span></span><button type="button" data-f="all">Süzgeçleri kaldır</button></div>`;
+  (row || sec.querySelector("h2")).insertAdjacentHTML("afterend", html);
+  const apply = () => {
+    let shown = 0;
+    info.forEach(x => {
+      const ok = (!st.pers || x.pers) && (!st.kinds.size || st.kinds.has(x.kind)) && (!st.kurum || x.kurum === st.kurum);
+      x.el.style.display = ok ? "" : "none";
+      if (ok) shown++;
+    });
+    $app.querySelectorAll("#sec-mad .grp").forEach(g => {
+      const its = [...g.querySelectorAll(".item")];
+      g.style.display = its.length && its.every(i => i.style.display === "none") ? "none" : "";
+    });
+    $app.querySelectorAll("#sec-mad .grp-strip .gs").forEach(a => {
+      const g = $app.querySelector(a.getAttribute("href"));
+      a.style.display = g && g.style.display === "none" ? "none" : "";
+    });
+    const any = st.pers || st.kinds.size || st.kurum;
+    sec.querySelectorAll(".site-flt button").forEach(b => {
+      const f = b.dataset.f;
+      const on = f === "pers" ? st.pers : f.startsWith("k:") ? st.kinds.has(f.slice(2)) : f.startsWith("u:") ? st.kurum === f.slice(2) : false;
+      b.classList.toggle("on", on);
+      if (f === "all") b.classList.toggle("off", !!any);
+    });
+    const end = sec.querySelector(".site-fend");
+    end.style.display = any ? "flex" : "none";
+    end.querySelector("span").textContent = `${shown} / ${items.length} düzenleme gösteriliyor`;
+  };
+  sec.addEventListener("click", e => {
+    const b = e.target.closest(".site-flt button, .site-fend button");
+    if (!b) return;
+    const f = b.dataset.f;
+    if (f === "all") { st.pers = false; st.kinds.clear(); st.kurum = ""; }
+    else if (f === "pers") st.pers = !st.pers;
+    else if (f.startsWith("k:")) { const k = f.slice(2); st.kinds.has(k) ? st.kinds.delete(k) : st.kinds.add(k); }
+    else if (f.startsWith("u:")) st.kurum = st.kurum === f.slice(2) ? "" : f.slice(2);
+    apply();
+  });
+  apply();
 }
 
 function wireDay(k, d, ozet) {
@@ -856,7 +928,7 @@ function showTools() {
     `</div><p class="hint">Özet sayfaları bu boyutla gösterilir.</p></section>` +
     `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
     `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
-    `<p class="hint">Açıkken Geçmiş listesinde, aramada ve Yürürlük Takvimi'nde yalnızca kamu personeline ilişkin düzenlemeler görünür.</p></section>` +
+    `<p class="hint">Açıkken Geçmiş listesinde, aramada, Yürürlük Takvimi'nde ve gün sayfalarının açılışında yalnızca kamu personeline ilişkin düzenlemeler gösterilir.</p></section>` +
     `<section class="card sec"><h2><span class="ic">🎯</span><span class="t">Takip kelimeleri<small>Bildirim Radarı'nın web hâli</small></span></h2>` +
     `<form class="srch site-watch" autocomplete="off"><input type="text" name="k" placeholder="Takip etmek istediğiniz kelime (ör. ikamet izni)" maxlength="40"><button type="submit">Ekle</button></form>` +
     `<div class="tags site-wtags">${watchWords().map(w => `<span class="tg1">${esc(w)} <a href="#" data-wdel="${esc(w)}" aria-label="Kaldır">✕</a></span>`).join("") || `<span class="hint">Henüz kelime yok.</span>`}</div>` +
@@ -919,7 +991,7 @@ async function showCalendar() {
     for (const sec of d.sections) if (sec.kind === "mad") for (const g of groupsOf(sec.nodes)) for (const it of g.items) {
       const p = itemParts(it);
       const at = parseTrDate(p.yur);
-      if (at && at >= today) found.push({ at, day: k, title: it.title, kind: g.kind, kurum: p.kurum, pers: p.aud.length > 0, href: it.href });
+      if (at && at >= today) found.push({ at, day: k, title: it.title, kind: g.kind, kurum: p.kurum, pers: p.pers || p.aud.length > 0, href: it.href });
     }
   }));
   found.sort((a, b) => a.at.localeCompare(b.at) || a.title.localeCompare(b.title, "tr"));
@@ -973,7 +1045,7 @@ async function showBulletin(period) {
         regs++; kinds[g.kind] = (kinds[g.kind] || 0) + 1;
         const p = itemParts(it);
         if (p.kurum) agencies[p.kurum] = (agencies[p.kurum] || 0) + 1;
-        if (p.aud.length) pers.push({ day: k, title: it.title, kurum: p.kurum, aud: p.aud });
+        if (p.pers || p.aud.length) pers.push({ day: k, title: it.title, kurum: p.kurum, aud: p.aud });
       } else if (sec.kind === "one") {
         for (const ul of sec.nodes.filter(el => ["ul", "ol"].includes(tag(el)))) for (const li of ul.children) highlights.push({ day: k, html: inl(li) });
       } else if (sec.kind === "ata") {
