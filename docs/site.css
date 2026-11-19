@@ -138,3 +138,11 @@ html.dark .toast{background:#E8EAED;color:#121417}
 .seg.site-fs{grid-template-columns:repeat(4,1fr)}
 .seg.site-fs a{padding:6px 2px;min-width:0}
 .fltnote{margin:12px 0 4px}
+
+/* Bulten: yatay cubuklar ve paylas dugmesi */
+.site-bar{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) auto;align-items:center;gap:10px;padding:5px 0;font-size:13.5px}
+.site-bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.site-bar i{display:block;height:9px;border-radius:9px;background:rgba(120,120,120,.16);overflow:hidden}
+.site-bar s{display:block;height:100%;border-radius:9px}
+.site-share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:14px 0 6px;padding:13px;border:0;border-radius:16px;color:#fff;font:inherit;font-weight:800;background:linear-gradient(135deg,#D8362F,#B71C1C 55%,#7C0F13);box-shadow:0 6px 14px rgba(183,28,28,.3);cursor:pointer}
+.site-share svg.i{font-size:18px}

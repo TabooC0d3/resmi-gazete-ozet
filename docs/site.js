@@ -839,7 +839,7 @@ function showTools() {
     `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
     `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
     `<p class="hint">Açıkken Geçmiş listesinde, aramada ve Yürürlük Takvimi'nde yalnızca kamu personeline ilişkin düzenlemeler görünür.</p></section>` +
-    `<section class="card links"><a href="?takvim" data-nav><span class="e">📅</span><span class="l">Yürürlük Takvimi</span><span class="go">›</span></a></section>`;
+    `<section class="card links"><a href="?takvim" data-nav><span class="e">📅</span><span class="l">Yürürlük Takvimi</span><span class="go">›</span></a><a href="?bulten=7" data-nav><span class="e">📊</span><span class="l">Haftalık ve Aylık Bülten</span><span class="go">›</span></a></section>`;
   $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault(); setTheme(a.dataset.tema);
     $app.querySelectorAll("[data-tema]").forEach(x => x.classList.toggle("on", x === a));
@@ -922,6 +922,65 @@ async function showCalendar() {
   setMeta("Yürürlük Takvimi | Özet RG", "Yürürlüğe girecek düzenlemelerin takvimi.", "?takvim");
 }
 
+// ------------------------------------------------------------------ Haftalık ve Aylık Bülten
+
+const KIND_LABEL = { kanun: "Kanunlar", yon: "Yönetmelikler", teb: "Tebliğler", karar: "Kararlar", ata: "Atamalar", gen: "Genelgeler", yargi: "Yargı", ilan: "İlanlar", diger: "Diğer" };
+
+async function showBulletin(period) {
+  const n = period === 30 ? 30 : 7;
+  loading("Bülten hazırlanıyor…");
+  try { await loadIndex(); } catch (e) { return showError(e, () => showBulletin(n)); }
+  const today = todayKey();
+  const from = keyOf(tsOf(today) - (n - 1) * 864e5);
+  const days = INDEX.tarihler.filter(k => k >= from && k <= today).sort().reverse();
+  const kinds = {}, agencies = {}, pers = [], top = [], highlights = [];
+  let regs = 0, ataN = 0;
+  await Promise.all(days.map(async k => {
+    let html; try { html = await loadDay(k); } catch (e) { return; }
+    const d = parse(html);
+    for (const sec of d.sections) {
+      if (sec.kind === "mad") for (const g of groupsOf(sec.nodes)) for (const it of g.items) {
+        regs++; kinds[g.kind] = (kinds[g.kind] || 0) + 1;
+        const p = itemParts(it);
+        if (p.kurum) agencies[p.kurum] = (agencies[p.kurum] || 0) + 1;
+        if (p.aud.length) pers.push({ day: k, title: it.title, kurum: p.kurum, aud: p.aud });
+      } else if (sec.kind === "one") {
+        for (const ul of sec.nodes.filter(el => ["ul", "ol"].includes(tag(el)))) for (const li of ul.children) highlights.push({ day: k, html: inl(li) });
+      } else if (sec.kind === "ata") {
+        for (const r of appointmentRows(sec.nodes)) { ataN++; if (isSenior(r.position)) top.push({ day: k, position: r.position, nw: r.nw.split("(")[0].trim() }); }
+      }
+    }
+  }));
+  const sortByDay = (a, b) => b.day.localeCompare(a.day);
+  pers.sort(sortByDay); top.sort(sortByDay); highlights.sort(sortByDay);
+  const kList = Object.entries(kinds).sort((a, b) => b[1] - a[1]);
+  const aList = Object.entries(agencies).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const dark = isDark() ? 1 : 0;
+  const bar = (label, v, max, color) => `<div class="site-bar"><span>${esc(label)}</span><i><s style="width:${Math.max(4, v / max * 100).toFixed(1)}%;background:${color}"></s></i><b>${v}</b></div>`;
+  let s = `<a class="back" href="./" data-nav>${ic("arrow")}Özete dön</a><section class="card hero"><div class="kicker">${n === 7 ? "HAFTALIK" : "AYLIK"} BÜLTEN</div>` +
+    `<h1>Son ${n} gün</h1><div class="sub">${longOf(from)} – ${longOf(today)}</div>` +
+    `<div class="lst-chips">${[7, 30].map(x => `<a class="fchip${x === n ? " on" : ""}" href="?bulten=${x}" data-nav>${x === 7 ? "📅 Haftalık" : "🗓️ Aylık"}</a>`).join("")}</div>` +
+    stats([{ n: regs, t: "düzenleme", c: "s1", h: "#b-kur" }, { n: pers.length, t: "personel", c: "s4", h: "#b-per" }, { n: highlights.length, t: "öne çıkan", c: "s2", h: "#b-one" }, { n: top.length, t: "üst düzey atama", c: "s3", h: "#b-ata" }]) + `</section>`;
+  if (!days.length) s += `<section class="card cal-empty"><div class="big">📰</div><p>Bu dönemde özet bulunamadı.</p></section>`;
+  if (kList.length) s += `<section class="card sec"><h2><span class="ic">${ic("pie")}</span>Türlere göre</h2>${kList.map(([k, v]) => bar(KIND_LABEL[k] || k, v, kList[0][1], KIND_COLOR[k][dark])).join("")}</section>`;
+  if (aList.length) s += `<section id="b-kur" class="card sec"><h2><span class="ic">${ic("bank")}</span>En çok düzenleme yayımlayan kurumlar</h2>${aList.map(([k, v]) => bar(k, v, aList[0][1], "#1A56C4")).join("")}</section>`;
+  if (pers.length) s += `<section id="b-per" class="card sec"><h2><span class="ic">${ic("person")}</span>Kamu personeline ilişkin<span class="cnt">${pers.length}</span></h2><ul class="plain">` +
+    pers.slice(0, 15).map(p => `<li><a href="${dayUrl(p.day)}" data-nav><span><b>${esc(p.title)}</b><br><small>${shortOf(p.day)} · ${esc(p.kurum || "")}${p.aud.length ? " · " + esc(p.aud.join(", ")) : ""}</small></span></a></li>`).join("") + `</ul></section>`;
+  if (highlights.length) s += `<section id="b-one" class="sec sec-one"><h2 class="free"><span class="ic">${ic("star")}</span>Öne çıkanlar</h2><ol class="hl">` +
+    highlights.slice(0, 10).map(h => `<li>${h.html}<a class="hl-go" href="${dayUrl(h.day)}" data-nav>${shortOf(h.day)} · özete git</a></li>`).join("") + `</ol></section>`;
+  if (top.length) s += `<section id="b-ata" class="card sec sec-ata"><h2><span class="ic">${ic("group")}</span>Üst düzey atamalar<span class="cnt">${top.length}</span></h2><div class="ata-list">` +
+    top.slice(0, 20).map(t => { const parts = t.position.split(" · "); return `<div class="ata-row top"><div class="ata-pos">${ic("bank")}<span><b>${esc(parts[parts.length - 1])}</b><i class="ata-top">⭐ Üst düzey</i><small>${esc(parts.slice(0, -1).join(" · "))} · ${shortOf(t.day)}</small></span></div><div class="ata-swap"><div class="ata-new"><span class="t">Yeni</span><b>${esc(t.nw || "—")}</b></div></div></div>`; }).join("") + `</div></section>`;
+  s += `<button class="site-share" type="button">${ic("share")}Bülteni paylaş</button><p class="note src-note">${ataN} atama kararı satırı, ${days.length} günlük özetten derlendi.</p>`;
+  $app.innerHTML = s;
+  $app.querySelector(".site-share").addEventListener("click", async () => {
+    const text = `📊 Özet RG ${n === 7 ? "Haftalık" : "Aylık"} Bülten (${longOf(from)} – ${longOf(today)})\n${regs} düzenleme · ${pers.length} personel · ${top.length} üst düzey atama\n` +
+      aList.slice(0, 5).map(([k, v]) => `• ${k}: ${v}`).join("\n") + `\n${new URL("?bulten=" + n, location.href).href}`;
+    if (navigator.share) { try { await navigator.share({ title: "Özet RG Bülten", text }); } catch (e) { /* vazgeçildi */ } return; }
+    try { await navigator.clipboard.writeText(text); toast("Bülten kopyalandı"); } catch (e) { prompt("Bülten:", text); }
+  });
+  setMeta(`${n === 7 ? "Haftalık" : "Aylık"} Bülten | Özet RG`, "Son günlerin düzenleme, personel ve atama özeti.", `?bulten=${n}`);
+}
+
 // ------------------------------------------------------------------ hakkında (uygulamadaki Hakkında ile aynı)
 
 function showAbout() {
@@ -991,11 +1050,12 @@ async function route() {
   lastSearch = location.search;
   if (window.speechSynthesis) speechSynthesis.cancel();
   const q = new URLSearchParams(location.search);
-  $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar") || q.has("takvim"));
+  $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar") || q.has("takvim") || q.has("bulten"));
   applyFont();
   if (q.has("hakkinda")) { showAbout(); return; }
   if (q.has("araclar")) { showTools(); return; }
   if (q.has("takvim")) { await showCalendar(); return; }
+  if (q.has("bulten")) { await showBulletin(+q.get("bulten")); return; }
   try { await loadIndex(); } catch (e) { return showError(e, route); }
   if (q.has("gun")) await showDay(normKey(q.get("gun")), (q.get("ara") || "").trim());
   else if (q.has("gecmis") || q.has("ara") || q.has("tur")) await showList((q.get("ara") || "").trim(), q.get("tur") || "");
