@@ -18,8 +18,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <!-- Sürüm eki: Pages dosyaları 10 dk önbellekte tutar; site.js ya da CSS değişince ?v= artırılır ki
      tarayıcı yeni sayfayı eski betikle birleştirmesin -->
-<link rel="stylesheet" href="app.css?v=21">
-<link rel="stylesheet" href="site.css?v=21">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","name":"Özet RG","alternateName":"Özet RG: Resmî Gazete'nin günlük özeti","url":"https://birolabanuzoglu.github.io/resmi-gazete-ozet/","inLanguage":"tr","description":"T.C. Resmî Gazete'nin her sayısının sade Türkçe özeti: öne çıkanlar, kanun, yönetmelik ve kararlar, atamalar, eski–yeni karşılaştırmaları. Ücretsiz.","potentialAction":{"@type":"SearchAction","target":"https://birolabanuzoglu.github.io/resmi-gazete-ozet/?ara={search_term_string}","query-input":"required name=search_term_string"}}
+</script>
+<link rel="stylesheet" href="app.css?v=22">
+<link rel="stylesheet" href="site.css?v=22">
 <script>
   // Tema, sayfa çizilmeden önce uygulanır (açık sayfanın bir an parlamaması için)
   (function () {
@@ -29,7 +32,7 @@
     document.documentElement.className = d ? "dark" : "light";
   })();
 </script>
-<script src="site.js?v=21" defer></script>
+<script src="site.js?v=22" defer></script>
 </head>
 <body>
 <div class="band"></div>
@@ -47,6 +50,12 @@
 <main id="app"><div class="ld"><i></i>Özet yükleniyor…</div></main>
 <noscript><main><section class="card hero"><div class="empty"><b>Bu site JavaScript ile çalışır</b>
   <p>Özetleri doğrudan <a href="https://github.com/birolabanuzoglu/resmi-gazete-ozet/tree/main/ozetler">GitHub deposunda</a> da okuyabilirsiniz.</p></div></section></main></noscript>
+<section class="seo-intro">
+  <h2>Özet RG nedir?</h2>
+  <p>Özet RG, T.C. Resmî Gazete'nin her sayısını sade Türkçe özetleyen ücretsiz bir web sitesi ve Android uygulamasıdır. Her günün özetinde öne çıkanlar, kanun, yönetmelik, tebliğ ve karar maddeleri, atama kararları ve eski–yeni karşılaştırmaları yer alır; kamu personelini ilgilendiren düzenlemeler ayrıca ayrıntılı özetlenir.</p>
+  <p>Hesap gerekmez. Özetler yapay zekâ ile hazırlanır ve hata içerebilir; bağlayıcı olan Resmî Gazete'de yayımlanan metindir. 2020'ye kadar geriye dönük arşiv özetleri de hazırlanmaktadır.</p>
+  <p><a href="?gecmis" data-nav>Geçmiş özetler</a> · <a href="?bulten=7" data-nav>Haftalık bülten</a> · <a href="?bulten=30" data-nav>Aylık bülten</a> · <a href="?takvim" data-nav>Yürürlük takvimi</a> · <a href="?hakkinda" data-nav>Hakkında</a></p>
+</section>
 <footer class="foot">
   <div class="foot-links">
     <a href="?hakkinda" data-nav>Hakkında</a>

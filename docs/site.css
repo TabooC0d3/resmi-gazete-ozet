@@ -260,3 +260,9 @@ html.dark .ata-share{color:#FFB27A;background:#3E2716;box-shadow:inset 0 0 0 1px
   body.printing-note .ata-tbl th{background:#eee}
   body.printing-note .ata-tbl tr{break-inside:avoid}
 }
+
+/* Aciklama bolumu (arama motorlari ve ilk kez gelenler icin) */
+.seo-intro{max-width:640px;margin:8px auto 0;padding:14px 20px 4px;font-size:13px;line-height:1.55;color:var(--ink2)}
+.seo-intro h2{display:block;margin:0 0 6px;font-size:14px;font-weight:800;color:var(--ink)}
+.seo-intro p{margin:0 0 8px}
+.seo-intro a{font-weight:800}
