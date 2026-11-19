@@ -626,6 +626,21 @@ async function showDay(k, q) {
     lead ? lead.slice(0, 158) + (lead.length > 158 ? "…" : "") : `${longOf(k)} tarihli Resmî Gazete'nin özeti.`, dayUrl(k));
 
   wireDay(k, d, ozet);
+  const ww = watchWords();
+  if (ww.length) {
+    let hits = 0;
+    $app.querySelectorAll(".item").forEach(it => {
+      const text = low(it.textContent);
+      const m = ww.filter(w => text.includes(low(w)));
+      if (!m.length) return;
+      hits++;
+      const chips = it.querySelector(".meta-chips") || it.insertAdjacentElement("afterbegin", Object.assign(document.createElement("div"), { className: "meta-chips" }));
+      chips.insertAdjacentHTML("beforeend", `<span class="mchip m-radar">🎯 <b>${esc(m.join(", "))}</b></span>`);
+    });
+    if (hits) $app.querySelector(".hero").insertAdjacentHTML("beforeend", `<a class="hero-cal" href="#" data-radar>🎯 <span>Takip ettiğiniz kelime ${hits} maddede geçiyor</span></a>`);
+    const jump = $app.querySelector("[data-radar]");
+    if (jump) jump.addEventListener("click", e => { e.preventDefault(); const f = $app.querySelector(".item .m-radar"); if (f) f.closest(".item").scrollIntoView({ block: "center" }); });
+  }
   if (q) highlight(q);
 }
 
@@ -810,6 +825,7 @@ function renderDays(q, tur) {
     if (p.sayi) bits.push(`Sayı ${esc(p.sayi)}`);
     bits.push(a ? "🗄️ Arşiv özeti" : p.duzenleme ? `${p.duzenleme} düzenleme` : "");
     if (p.personel) bits.push("👤 Personel");
+    if (watchWords().some(w => queryTokens(w).every(t => (p.metin || "").includes(t)))) bits.push("🎯 Takibinizde");
     s += `<a class="day card${a ? " arc" : ""}" href="${dayUrl(k, q)}" data-nav><span class="dcal"><i>${mon3(k)}</i><b>${dayOf(k)}</b></span>` +
       `<span class="dtx"><b>${longOf(k)}</b><small>${bits.filter(Boolean).join(" · ")}</small>` +
       (p.onizleme ? `<span class="pv">${esc(p.onizleme)}</span>` : "") + `</span>${ic("chev")}</a>`;
@@ -823,6 +839,8 @@ function renderDays(q, tur) {
 const pref = (k, d = "") => { try { const v = localStorage.getItem("ayar_" + k); return v === null ? d : v; } catch (e) { return d; } };
 const setPref = (k, v) => { try { localStorage.setItem("ayar_" + k, v); } catch (e) { /* gizli sekme */ } };
 const FONTS = [["0.92", "Küçük"], ["1", "Normal"], ["1.12", "Büyük"], ["1.26", "Çok büyük"]];
+const watchWords = () => pref("takip", "").split("|").map(x => x.trim()).filter(Boolean);
+const setWatch = list => setPref("takip", [...new Set(list.map(x => x.trim()).filter(Boolean))].join("|"));
 function applyFont() { $app.style.zoom = pref("yazi", "1"); }
 
 function showTools() {
@@ -839,6 +857,10 @@ function showTools() {
     `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
     `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
     `<p class="hint">Açıkken Geçmiş listesinde, aramada ve Yürürlük Takvimi'nde yalnızca kamu personeline ilişkin düzenlemeler görünür.</p></section>` +
+    `<section class="card sec"><h2><span class="ic">🎯</span><span class="t">Takip kelimeleri<small>Bildirim Radarı'nın web hâli</small></span></h2>` +
+    `<form class="srch site-watch" autocomplete="off"><input type="text" name="k" placeholder="Takip etmek istediğiniz kelime (ör. ikamet izni)" maxlength="40"><button type="submit">Ekle</button></form>` +
+    `<div class="tags site-wtags">${watchWords().map(w => `<span class="tg1">${esc(w)} <a href="#" data-wdel="${esc(w)}" aria-label="Kaldır">✕</a></span>`).join("") || `<span class="hint">Henüz kelime yok.</span>`}</div>` +
+    `<p class="hint">Takip ettiğiniz kelime bir günün özetinde geçerse Geçmiş listesinde "🎯 Takibinizde" etiketi çıkar ve gün sayfasında ilgili madde işaretlenir. Kelimeler yalnızca bu tarayıcıda saklanır.</p></section>` +
     `<section class="card links"><a href="?takvim" data-nav><span class="e">📅</span><span class="l">Yürürlük Takvimi</span><span class="go">›</span></a><a href="?bulten=7" data-nav><span class="e">📊</span><span class="l">Haftalık ve Aylık Bülten</span><span class="go">›</span></a></section>`;
   $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault(); setTheme(a.dataset.tema);
@@ -849,6 +871,14 @@ function showTools() {
     $app.querySelectorAll("[data-yazi]").forEach(x => x.classList.toggle("on", x === a));
   }));
   $app.querySelector("[data-flt=personel]").addEventListener("click", e => { e.preventDefault(); setPref("personel", pers ? "0" : "1"); showTools(); });
+  $app.querySelector(".site-watch").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = e.target.k.value.trim();
+    if (v) { setWatch([...watchWords(), v]); showTools(); }
+  });
+  $app.querySelectorAll("[data-wdel]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault(); setWatch(watchWords().filter(w => w !== a.dataset.wdel)); showTools();
+  }));
   setMeta("Araçlar ve Ayarlar | Özet RG", "Görünüm, yazı boyutu ve süzgeçler.", "?araclar");
 }
 
