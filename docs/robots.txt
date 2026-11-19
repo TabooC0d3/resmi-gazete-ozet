@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://birolabanuzoglu.github.io/resmi-gazete-ozet/sitemap.xml
