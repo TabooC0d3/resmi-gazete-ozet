@@ -442,6 +442,10 @@ function currentQuery(title) {
 /** Güncel hâli yalnızca kalıcı düzenlemeler için anlamlı (atama, ilan, tek seferlik kararlar değil) */
 const hasCurrent = (g, title) => ["kanun", "yon", "teb", "gen"].includes(g.kind) ||
   (g.kind === "karar" && /yönetmelik|esas|usul|tarife|karar(?:name)?$/i.test(currentQuery(title)) && !/atama/i.test(title));
+const noteBox = note => note
+  ? `<button class="unote" type="button" data-note><span class="unote-h">📝 Notunuz</span><span class="unote-e">Düzenle</span><span class="unote-t">${esc(note)}</span></button>`
+  : `<button class="unote add" type="button" data-note>📝 Not ekle</button>`;
+
 function itemHtml(item, g, n, archive) {
   const p = itemParts(item);
   const pers = p.pers || p.aud.length > 0;
@@ -451,7 +455,9 @@ function itemHtml(item, g, n, archive) {
   if (p.yur) chips += /yayımı tarihinde/i.test(p.yur) ? `<span class="m-now">Yayımı tarihinde yürürlükte</span>`
     : `<span class="mchip m-yur">${ic("cal")}Yürürlük: ${esc(p.yur)}</span>`;
   for (const a of p.aud) chips += `<span class="mchip m-aud">${esc(a)}</span>`;
-  let s = `<article class="card item${pers ? " pers" : ""}" id="m-${n}">` + (chips ? `<div class="meta-chips">${chips}</div>` : "") +
+  const key = itemKey(CUR_DAY, item.href, item.title), rec = saved()[key];
+  let s = `<article class="card item${pers ? " pers" : ""}${rec ? " saved" : ""}" id="m-${n}" data-key="${esc(key)}" data-day="${CUR_DAY}" data-title="${esc(item.title)}" data-href="${esc(item.href)}">` +
+    `<button class="star${rec ? " on" : ""}" type="button" data-save>${ic("star")}<span>${rec ? "Kayıtlı" : "Kaydet"}</span></button>` + (chips ? `<div class="meta-chips">${chips}</div>` : "") +
     `<h4>${esc(item.title)}</h4>`;
   for (const t of p.trans) s += `<div class="trans-box">${ic("warn")}<div><b class="h">Geçiş hükmü</b>${t}</div></div>`;
   if (p.lead.length) s += `<div class="body">${p.lead.map(block).join("")}</div>`;
@@ -461,6 +467,7 @@ function itemHtml(item, g, n, archive) {
     s += `<details><summary><span class="sp"><span class="t"${d.hint ? ` data-ipucu="${esc(d.hint)}"` : ""}></span>${ic("expand")}</span>${ek}</summary>` +
       `<div class="body">${d.html}</div></details>`;
   } else if (ek) s += `<div class="ek-row">${ek}</div>`;
+  if (rec) s += noteBox(rec.note);
   const kind = /\.pdf(\?|$)/i.test(item.href) ? "PDF" : "HTM";
   s += `<div class="item-actions">` +
     (/^https?:\/\//.test(item.href) ? `<a class="src" href="${esc(item.href)}" target="_blank" rel="noopener"><span class="tag">${kind}</span>Tam metin</a>` : "<span></span>") +
@@ -562,6 +569,7 @@ async function showDay(k, q) {
   if (!k) k = INDEX.guncel;
   if (!INDEX.tarihler.includes(k)) return showMissing(k);
   loading("Özet yükleniyor…");
+  CUR_DAY = k;
   let html;
   try { html = await loadDay(k); } catch (e) { return showError(e, () => showDay(k, q)); }
   const d = parse(html);
@@ -717,6 +725,34 @@ function setupFilters() {
 }
 
 function wireDay(k, d, ozet) {
+  $app.addEventListener("click", e => {
+    const star = e.target.closest("[data-save]"), nb = e.target.closest("[data-note]");
+    const art = (star || nb) && (star || nb).closest(".item");
+    if (!art) return;
+    const all = saved(), key = art.dataset.key;
+    if (star) {
+      if (all[key]) {
+        if (all[key].note && !confirm("Bu maddeye yazdığınız not da silinecek. Kayıttan çıkarılsın mı?")) return;
+        delete all[key];
+      } else all[key] = { day: art.dataset.day, title: art.dataset.title, href: art.dataset.href, note: "", ts: Date.now() };
+      setSaved(all);
+    } else {
+      const cur = all[key] || { day: art.dataset.day, title: art.dataset.title, href: art.dataset.href, note: "", ts: Date.now() };
+      const v = prompt("Notunuz (en çok 280 karakter; bu tarayıcıda saklanır):", cur.note || "");
+      if (v === null) return;
+      cur.note = v.trim().slice(0, 280);
+      all[key] = cur;
+      setSaved(all);
+    }
+    const rec = all[key];
+    art.classList.toggle("saved", !!rec);
+    const st = art.querySelector("[data-save]");
+    st.classList.toggle("on", !!rec);
+    st.querySelector("span").textContent = rec ? "Kayıtlı" : "Kaydet";
+    const old = art.querySelector("[data-note]");
+    if (old) old.remove();
+    if (rec) art.querySelector(".item-actions").insertAdjacentHTML("beforebegin", noteBox(rec.note));
+  });
   const tts = $app.querySelector(".tts-btn");
   if (tts && ozet) {
     const set = on => { tts.innerHTML = ic(on ? "stop" : "vol") + `<span>${on ? "Durdur" : "Dinle"}</span>`; };
@@ -911,6 +947,12 @@ function renderDays(q, tur) {
 const pref = (k, d = "") => { try { const v = localStorage.getItem("ayar_" + k); return v === null ? d : v; } catch (e) { return d; } };
 const setPref = (k, v) => { try { localStorage.setItem("ayar_" + k, v); } catch (e) { /* gizli sekme */ } };
 const FONTS = [["0.92", "Küçük"], ["1", "Normal"], ["1.12", "Büyük"], ["1.26", "Çok büyük"]];
+// Kayıtlar (Kaydet ve Not): yalnızca bu tarayıcıda, localStorage'da
+let CUR_DAY = "";
+const saved = () => { try { return JSON.parse(pref("kayit", "{}")) || {}; } catch (e) { return {}; } };
+const setSaved = o => setPref("kayit", JSON.stringify(o));
+const itemKey = (day, href, title) => `${day}|${href || title}`;
+
 const watchWords = () => pref("takip", "").split("|").map(x => x.trim()).filter(Boolean);
 const setWatch = list => setPref("takip", [...new Set(list.map(x => x.trim()).filter(Boolean))].join("|"));
 function applyFont() { $app.style.zoom = pref("yazi", "1"); }
@@ -919,7 +961,7 @@ function showTools() {
   const t = theme(), f = pref("yazi", "1");
   const pers = pref("personel") === "1";
   $app.innerHTML = `<a class="back" href="./" data-nav>${ic("arrow")}Özete dön</a>` +
-    `<div class="tl-head"><span class="ic">${ic("list")}</span><div><h1>Araçlar ve Ayarlar</h1><p>Görünüm, yazı boyutu ve süzgeçler</p></div></div>` +
+    `<div class="tl-head"><span class="ic">${ic("list")}</span><div><h1>Araçlar ve Ayarlar</h1><p>Görünüm, süzgeçler, kayıtlar, takip, takvim ve bülten</p></div></div>` +
     `<section class="card sec ab-theme"><h2><span class="ic">${ic("moon")}</span>Görünüm</h2><div class="seg">` +
     [["sistem", "🌓 Sistem"], ["acik", "☀️ Açık"], ["koyu", "🌙 Koyu"]].map(([k, l]) => `<a href="#" data-tema="${k}"${t === k ? ` class="on"` : ""}>${l}</a>`).join("") +
     `</div><p class="hint">Sistem: cihazınızın ayarını izler.</p></section>` +
@@ -929,6 +971,9 @@ function showTools() {
     `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
     `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
     `<p class="hint">Açıkken Geçmiş listesinde, aramada, Yürürlük Takvimi'nde ve gün sayfalarının açılışında yalnızca kamu personeline ilişkin düzenlemeler gösterilir.</p></section>` +
+    `<section class="card sec"><h2><span class="ic">${ic("star")}</span><span class="t">Kayıtlarım<small>Kaydettiğiniz maddeler ve notlar</small></span><span class="cnt">${Object.keys(saved()).length}</span></h2>` +
+    (Object.values(saved()).sort((a, b) => b.ts - a.ts).map(r => `<div class="site-rec"><a href="${dayUrl(r.day)}" data-nav><b>${esc(r.title)}</b><small>${longOf(r.day)}</small></a>${r.note ? `<p class="unote-t">📝 ${esc(r.note)}</p>` : ""}<a href="#" class="site-rec-del" data-rdel="${esc(itemKey(r.day, r.href, r.title))}">Kaldır</a></div>`).join("") || `<p class="hint">Henüz kayıt yok. Bir özet sayfasında maddenin ⭐ Kaydet düğmesine dokunun.</p>`) +
+    `<div class="site-rec-acts"><button type="button" class="tur-c" data-backup>⬇️ Yedek indir</button><label class="tur-c">⬆️ Yedek yükle<input type="file" accept="application/json" hidden data-restore></label></div></section>` +
     `<section class="card sec"><h2><span class="ic">🎯</span><span class="t">Takip kelimeleri<small>Bildirim Radarı'nın web hâli</small></span></h2>` +
     `<form class="srch site-watch" autocomplete="off"><input type="text" name="k" placeholder="Takip etmek istediğiniz kelime (ör. ikamet izni)" maxlength="40"><button type="submit">Ekle</button></form>` +
     `<div class="tags site-wtags">${watchWords().map(w => `<span class="tg1">${esc(w)} <a href="#" data-wdel="${esc(w)}" aria-label="Kaldır">✕</a></span>`).join("") || `<span class="hint">Henüz kelime yok.</span>`}</div>` +
@@ -943,6 +988,23 @@ function showTools() {
     $app.querySelectorAll("[data-yazi]").forEach(x => x.classList.toggle("on", x === a));
   }));
   $app.querySelector("[data-flt=personel]").addEventListener("click", e => { e.preventDefault(); setPref("personel", pers ? "0" : "1"); showTools(); });
+  $app.querySelectorAll("[data-rdel]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault(); const all = saved(); delete all[a.dataset.rdel]; setSaved(all); showTools();
+  }));
+  $app.querySelector("[data-backup]").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify({ surum: 1, kayit: saved(), takip: watchWords() }, null, 1)], { type: "application/json" });
+    const url = URL.createObjectURL(blob), dl = document.createElement("a");
+    dl.href = url; dl.download = "ozet-rg-web-yedek.json"; document.body.append(dl); dl.click(); dl.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  });
+  $app.querySelector("[data-restore]").addEventListener("change", async e => {
+    try {
+      const j = JSON.parse(await e.target.files[0].text());
+      if (j.kayit && typeof j.kayit === "object") setSaved({ ...saved(), ...j.kayit });
+      if (Array.isArray(j.takip)) setWatch([...watchWords(), ...j.takip]);
+      toast("Yedek yüklendi"); showTools();
+    } catch (x) { toast("Yedek dosyası okunamadı"); }
+  });
   $app.querySelector(".site-watch").addEventListener("submit", e => {
     e.preventDefault();
     const v = e.target.k.value.trim();

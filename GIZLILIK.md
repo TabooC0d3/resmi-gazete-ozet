@@ -43,8 +43,10 @@ telefonunuzun tarayıcısında (ya da ilgili uygulamada) açılır.
 
 Özetler <https://birolabanuzoglu.github.io/resmi-gazete-ozet/> adresindeki web sitesinde de
 yayımlanır. Site GitHub Pages'te barındırılır; hesap, çerez, reklam, analiz ya da ziyaretçi
-takibi kullanmaz. Sitenin tuttuğu tek bilgi seçtiğiniz renk temasıdır (Sistem, Açık ya da Koyu);
-bu tercih yalnızca tarayıcınızda (`localStorage`) saklanır. Site özetleri ve arama dizinini
+takibi kullanmaz. Sitenin tuttuğu bilgiler yalnızca tarayıcınızda (`localStorage`) durur ve hiçbir sunucuya
+gönderilmez: renk teması (Sistem, Açık ya da Koyu), yazı boyutu, "Sadece Personel" süzgeci, takip
+kelimeleriniz ile kaydettiğiniz maddeler ve yazdığınız notlar. "Yedek indir" bunları bilgisayarınıza
+bir dosya olarak indirir. Tarayıcı verilerini silerseniz bunlar da silinir. Site özetleri ve arama dizinini
 uygulamayla aynı adresten (`raw.githubusercontent.com`) okur; sayfayı açtığınızda IP adresiniz ve
 tarayıcı bilgileriniz GitHub tarafından teknik olarak görülebilir (GitHub Gizlilik Bildirimi
 geçerlidir). Arama yalnızca tarayıcınızda yapılır, aranan kelime hiçbir yere gönderilmez.
@@ -166,8 +168,10 @@ ChatGPT) button, the link opens in your phone's browser (or in the related app).
 
 The summaries are also published on the website <https://birolabanuzoglu.github.io/resmi-gazete-ozet/>.
 The site is hosted on GitHub Pages and uses no accounts, cookies, ads, analytics or visitor
-tracking. The only thing it stores is your colour theme choice (System, Light or Dark), kept only
-in your browser (`localStorage`). The site reads the summaries and the search index from the same
+tracking. What it stores stays only in your browser (`localStorage`) and is never sent to any server:
+your colour theme (System, Light or Dark), text size, the "Personnel only" filter, your watch
+words, and the items and notes you save. "Yedek indir" (download backup) saves them to your
+computer as a file. If you clear your browser data they are deleted. The site reads the summaries and the search index from the same
 address as the app (`raw.githubusercontent.com`); when you open a page, your IP address and
 browser details are technically visible to GitHub (the GitHub General Privacy Statement applies).
 Search runs entirely in your browser; your search words are not sent anywhere. The "Dinle"
