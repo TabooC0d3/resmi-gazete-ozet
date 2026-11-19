@@ -352,21 +352,85 @@ function appointmentRow(r) {
     (top ? `<i class="ata-top">⭐ Üst düzey</i>` : "") + (org ? `<small>${esc(org)}</small>` : "") + `</span></div>` +
     `<div class="ata-swap">${appointee("Eski", r.old, "ata-old", r.src)}<span class="ata-ar">${ic("arrow")}</span>${appointee("Yeni", r.nw, "ata-new", null)}</div></div>`;
 }
+const GOVERNOR = /(^|\s)vali(si)?(\s|$)|vali yardımcı/;
+const ATA_TITLES = [["vali", "Vali"], ["valiyrd", "Vali Yardımcısı"], ["kaymakam", "Kaymakam"], ["bakanyrd", "Bakan Yardımcısı"], ["gm", "Genel Müdür"],
+  ["gmyrd", "Genel Müdür Yardımcısı"], ["baskan", "Başkan"], ["baskanyrd", "Başkan Yardımcısı"], ["daire", "Daire Başkanı"], ["ilmd", "İl ve Bölge Müdürü"],
+  ["uye", "Kurul Üyesi"], ["rektor", "Rektör ve Dekan"], ["elci", "Büyükelçi ve Konsolos"], ["musavir", "Müşavir ve Danışman"], ["denetim", "Müfettiş ve Denetçi"],
+  ["yargi", "Hâkim ve Savcı"], ["diger", "Diğer"]];
+/** Atamanın ünvanı (uygulamadaki appointmentTitle ile aynı sıra) */
+function ataTitleOf(position) {
+  const s2 = low(position), role = (s2.includes(" · ") ? s2.slice(s2.lastIndexOf(" · ") + 3) : s2).trim();
+  const has = (...w) => w.some(x => role.includes(x));
+  if (has("vali yardımcı")) return "valiyrd";
+  if (GOVERNOR.test(role)) return "vali";
+  if (has("kaymakam")) return "kaymakam";
+  if (has("bakan yardımcı")) return "bakanyrd";
+  if (has("genel müdür yardımcı")) return "gmyrd";
+  if (has("genel müdür")) return "gm";
+  if (has("daire başkan")) return "daire";
+  if (has("başkan yardımcı")) return "baskanyrd";
+  if (has("rektör", "dekan")) return "rektor";
+  if (has("büyükelçi", "başkonsolos", "konsolos", "daimi temsilci")) return "elci";
+  if (has("müfettiş", "denetçi", "denetmen", "kontrolör")) return "denetim";
+  if (has("hâkim", "hakim", "savcı")) return "yargi";
+  if (role === "başkan" || role.endsWith(" başkanı") || role.endsWith(" başkan")) return "baskan";
+  if (has("bölge müdür") || PROVINCIAL_DIRECTOR.test(role)) return "ilmd";
+  if (role === "üye" || has("üyesi", "üyeliğ")) return "uye";
+  if (has("müşavir", "danışman", "müsteşar")) return "musavir";
+  return "diger";
+}
+const ATA = { sec: null, top: false, titles: new Set() };
+const ataVisible = rows => rows.filter(r => (!ATA.top || isSenior(r.position)) && (!ATA.titles.size || ATA.titles.has(ataTitleOf(r.position))));
+
 function appointments(sec) {
-  const rows = appointmentRows(sec.nodes);
-  const senior = rows.filter(r => isSenior(r.position)).length;
+  ATA.sec = sec;
+  const all = appointmentRows(sec.nodes);
+  const rows = ataVisible(all);
+  const senior = all.filter(r => isSenior(r.position)).length;
+  const topBtn = senior > 0 && senior < all.length;
+  const unv = ATA.titles.size ? ATA_TITLES.filter(([k]) => ATA.titles.has(k)).map(([, l]) => l) : [];
   let s = `<section id="sec-ata" class="card sec sec-ata"><h2><span class="ic">${ic("group")}</span>${esc(sec.title)}` +
-    (rows.length ? `<span class="cnt">${rows.length}</span>` : "") + `</h2>`;
+    (topBtn ? `<button type="button" class="ata-f site-ata-f${ATA.top ? " on" : ""}" data-ata-top>⭐ Sadece Üst Düzey</button>` : "") +
+    (all.length >= 2 ? `<button type="button" class="ata-u${unv.length ? " on" : ""}" data-ata-unvan>🗂️ ${unv.length ? esc(unv.slice(0, 2).join(", ")) + (unv.length > 2 ? " +" + (unv.length - 2) : "") : "Ünvan: Tümü"} ▾</button>` : "") +
+    (all.length ? `<span class="cnt">${rows.length}${rows.length !== all.length ? " / " + all.length : ""}</span>` : "") + `</h2>`;
   for (const el of sec.nodes) if (tag(el) !== "table") s += block(el);
-  if (senior && senior < rows.length) s += `<p class="ata-sum">⭐ ${senior} üst düzey atama</p>`;
+  if (!ATA.top && senior && senior < all.length && !ATA.titles.size) s += `<p class="ata-sum">⭐ ${senior} üst düzey atama</p>`;
+  if (ATA.titles.size || ATA.top) s += `<div class="ata-unote"><span>${rows.length} / ${all.length} görev gösteriliyor</span><button type="button" data-ata-reset>Tümünü göster</button></div>`;
   if (rows.length) {
     s += `<div class="ata-list">${rows.slice(0, ATAMA_ACIK).map(appointmentRow).join("")}</div>`;
     if (rows.length > ATAMA_ACIK) {
       s += `<details class="ata-more"><summary>Diğer ${rows.length - ATAMA_ACIK} atamayı göster</summary>` +
         `<div class="ata-list">${rows.slice(ATAMA_ACIK).map(appointmentRow).join("")}</div></details>`;
     }
-  }
-  return s + `<p class="ata-note">Adlar Resmî Gazete'de yayımlanan atama kararlarından aktarılmıştır; bağlayıcı olan kararın kendisidir.</p></section>`;
+  } else if (all.length) s += `<p class="hint">Seçili süzgeçlere uyan atama yok.</p>`;
+  s += `<p class="ata-note">Adlar Resmî Gazete'de yayımlanan atama kararlarından aktarılmıştır; bağlayıcı olan kararın kendisidir.</p>`;
+  if (rows.length) s += `<button type="button" class="ata-share" data-ata-paylas>📋 Atama Listesini Paylaş<small>Metin olarak kopyala ya da paylaş · seçili süzgeçle</small></button>`;
+  return s + `</section>`;
+}
+function ataRerender() {
+  const el = document.getElementById("sec-ata");
+  if (el && ATA.sec) el.outerHTML = appointments(ATA.sec);
+}
+function ataText() {
+  const P = CURP, rows = ataVisible(appointmentRows(ATA.sec.nodes));
+  const lines = [`👔 ATAMA KARARLARI\n📅 ${longOf(P.k)}${P.d.issue ? " · Sayı " + P.d.issue : ""}`];
+  rows.forEach((r, i) => {
+    const parts = r.position.split(" · ").map(x => x.trim()).filter(Boolean);
+    lines.push(`\n${i + 1}. ${isSenior(r.position) ? "⭐ " : ""}${parts[parts.length - 1] || r.position}${parts.length > 1 ? "\n   🏛️ " + parts.slice(0, -1).join(" · ") : ""}\n   ➖ Eski: ${r.old || "—"}\n   ➕ Yeni: ${r.nw || "—"}`);
+  });
+  lines.push("\nAdlar Resmî Gazete'deki atama kararlarından aktarılmıştır; bağlayıcı olan kararın kendisidir.\n" + new URL(dayUrl(P.k), location.href).href);
+  return lines.join("\n");
+}
+function ataUnvanModal() {
+  const all = appointmentRows(ATA.sec.nodes);
+  const cnt = k => all.filter(r => ataTitleOf(r.position) === k).length;
+  const sel = new Set(ATA.titles);
+  const m = openModal(`<div class="sheet-grip"></div><h3>🗂️ Ünvana göre süz</h3><p class="sheet-sub">Bir ya da birkaç ünvan seçin</p><div class="site-chips">` +
+    ATA_TITLES.filter(([k]) => cnt(k) > 0).map(([k, l]) => `<button type="button" class="fchip${sel.has(k) ? " on" : ""}" data-t="${k}">${l}<b class="n">${cnt(k)}</b></button>`).join("") +
+    `</div><div class="sheet-btns"><button type="button" class="sbtn alt" data-clear>Tümü</button><button type="button" class="sbtn" data-apply>Uygula</button></div><button type="button" class="sbtn ghost" data-close>Kapat</button>`, "unvan");
+  m.querySelectorAll("[data-t]").forEach(b => b.addEventListener("click", () => { const k = b.dataset.t; sel.has(k) ? sel.delete(k) : sel.add(k); b.classList.toggle("on", sel.has(k)); }));
+  m.querySelector("[data-clear]").addEventListener("click", () => { ATA.titles = new Set(); closeModal(); ataRerender(); });
+  m.querySelector("[data-apply]").addEventListener("click", () => { ATA.titles = sel; closeModal(); ataRerender(); });
 }
 
 // ------------------------------------------------------------------ maddeler
@@ -581,6 +645,7 @@ async function showDay(k, q) {
   });
   const items = groups.reduce((n, g) => n + g.items.length, 0);
   CURP = { k, d, groups, archive };
+  ATA.top = false; ATA.titles = new Set();
   const one = secs.find(s => s.kind === "one");
   const hl = one ? one.nodes.filter(el => ["ul", "ol"].includes(tag(el))).reduce((n, el) => n + el.children.length, 0) : 0;
   const ata = secs.find(s => s.kind === "ata");
@@ -673,24 +738,27 @@ function setupFilters() {
     el, grp: el.closest(".grp"), pers: el.classList.contains("pers"),
     fk: (el.closest(".grp") || { dataset: {} }).dataset.fk || "",
     kurum: (el.querySelector(".m-kurum") || {}).textContent || "",
+    aud: [...el.querySelectorAll(".m-aud")].map(x => x.textContent.trim()),
   }));
   const fks = FILTERS.filter(f => f.key !== "pers" && info.some(x => x.fk === f.key));
   const kur = {};
   info.forEach(x => { if (x.kurum) kur[x.kurum] = (kur[x.kurum] || 0) + 1; });
   const kurList = Object.entries(kur).filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 12);
   const hasPers = info.some(x => x.pers);
-  const st = { pers: prefKeys().includes("pers") && hasPers, kinds: new Set(prefKeys().filter(k => fks.some(f => f.key === k))), kurum: "" };
+  const audList = [...new Set(info.flatMap(x => x.aud))].map(a => [a, info.filter(x => x.aud.includes(a)).length]).sort((x, y) => y[1] - x[1]);
+  const st = { aud: "", pers: prefKeys().includes("pers") && hasPers, kinds: new Set(prefKeys().filter(k => fks.some(f => f.key === k))), kurum: "" };
   const row = $app.querySelector("#sec-mad .grp-strip");
   const html = `<div class="tur-row site-flt"><span class="tur-k">🔎 SÜZGEÇ</span><button type="button" class="tur-c tur-all" data-f="all">Tümü</button>` +
     (hasPers ? `<button type="button" class="tur-c" data-f="pers">👤 Personel<b>${info.filter(x => x.pers).length}</b></button>` : "") +
     fks.map(f => `<button type="button" class="tur-c" data-f="k:${f.key}">${f.emoji} ${esc(f.chip)}<b>${info.filter(x => x.fk === f.key).length}</b></button>`).join("") + `</div>` +
     (kurList.length ? `<div class="kur-row site-flt"><span class="kur-k">🏛️ KURUM</span>` + kurList.map(([k, n]) => `<button type="button" class="kur-c" data-f="u:${esc(k)}">${esc(k)}<b>${n}</b></button>`).join("") + `</div>` : "") +
+    (audList.length ? `<div class="aud-row site-flt site-aud"><span class="aud-k">KİMLERİ İLGİLENDİRİYOR?</span>` + audList.map(([a, n]) => `<button type="button" class="aud-c" data-f="a:${esc(a)}">${esc(a)}<b>${n}</b></button>`).join("") + `</div>` : "") +
     `<div class="flt-end site-fend"><span></span><button type="button" data-f="all">Süzgeçleri kaldır</button></div>`;
   (row || sec.querySelector("h2")).insertAdjacentHTML("afterend", html);
   const apply = () => {
     let shown = 0;
     info.forEach(x => {
-      const ok = (!st.pers || x.pers) && (!st.kinds.size || st.kinds.has(x.fk)) && (!st.kurum || x.kurum === st.kurum);
+      const ok = (!st.pers || x.pers) && (!st.kinds.size || st.kinds.has(x.fk)) && (!st.kurum || x.kurum === st.kurum) && (!st.aud || x.aud.includes(st.aud));
       x.el.style.display = ok ? "" : "none";
       if (ok) shown++;
     });
@@ -702,10 +770,11 @@ function setupFilters() {
       const g = $app.querySelector(a.getAttribute("href"));
       a.style.display = g && g.style.display === "none" ? "none" : "";
     });
-    const any = st.pers || st.kinds.size || st.kurum;
+    const any = st.pers || st.kinds.size || st.kurum || st.aud;
+    const ar = sec.querySelector(".site-aud"); if (ar) ar.style.display = st.pers ? "flex" : "none";
     sec.querySelectorAll(".site-flt button").forEach(b => {
       const f = b.dataset.f;
-      const on = f === "pers" ? st.pers : f.startsWith("k:") ? st.kinds.has(f.slice(2)) : f.startsWith("u:") ? st.kurum === f.slice(2) : false;
+      const on = f === "pers" ? st.pers : f.startsWith("k:") ? st.kinds.has(f.slice(2)) : f.startsWith("u:") ? st.kurum === f.slice(2) : f.startsWith("a:") ? st.aud === f.slice(2) : false;
       b.classList.toggle("on", on);
       if (f === "all") b.classList.toggle("off", !!any);
     });
@@ -717,10 +786,11 @@ function setupFilters() {
     const b = e.target.closest(".site-flt button, .site-fend button");
     if (!b) return;
     const f = b.dataset.f;
-    if (f === "all") { st.pers = false; st.kinds.clear(); st.kurum = ""; }
+    if (f === "all") { st.pers = false; st.kinds.clear(); st.kurum = ""; st.aud = ""; }
     else if (f === "pers") st.pers = !st.pers;
     else if (f.startsWith("k:")) { const k = f.slice(2); st.kinds.has(k) ? st.kinds.delete(k) : st.kinds.add(k); }
     else if (f.startsWith("u:")) st.kurum = st.kurum === f.slice(2) ? "" : f.slice(2);
+    else if (f.startsWith("a:")) st.aud = st.aud === f.slice(2) ? "" : f.slice(2);
     apply();
   });
   apply();
@@ -729,6 +799,21 @@ function setupFilters() {
 function wireDay(k, d, ozet) {
   if (!window.__dayClick) { window.__dayClick = true; $app.addEventListener("click", dayClick); }
   function dayClick(e) {
+    const at = e.target.closest("[data-ata-top],[data-ata-unvan],[data-ata-reset],[data-ata-paylas]");
+    if (at) {
+      e.preventDefault();
+      if (at.hasAttribute("data-ata-top")) { ATA.top = !ATA.top; ataRerender(); }
+      else if (at.hasAttribute("data-ata-unvan")) ataUnvanModal();
+      else if (at.hasAttribute("data-ata-reset")) { ATA.top = false; ATA.titles = new Set(); ataRerender(); }
+      else {
+        const text = ataText();
+        (async () => {
+          try { await navigator.clipboard.writeText(text); toast("Atama listesi kopyalandı"); } catch (x) { prompt("Atama listesi:", text); }
+          if (navigator.share) { try { await navigator.share({ title: "Atama listesi", text }); } catch (x) { /* vazgeçildi */ } }
+        })();
+      }
+      return;
+    }
     const ask = e.target.closest("[data-ask],[data-bilgi],[data-ask-day]");
     if (ask && CURP) {
       e.preventDefault();
@@ -1407,10 +1492,6 @@ function showAbout() {
     `<li>Özet her gece bu siteye ve Özet RG Android uygulamasına gelir; asıl metne tek dokunuşla geçersiniz.</li></ol>` +
     `<div class="trans-box ab-warn">${ic("warn")}<div>Resmî bir kamu sitesi değildir. Özetler bilgilendirme amaçlıdır; ` +
     `bağlayıcı olan, Resmî Gazete'de yayımlanan asıl metindir.</div></div>` +
-    `<section class="card sec ab-theme"><h2><span class="ic">${ic("moon")}</span>Görünüm</h2><div class="seg">` +
-    [["sistem", "🌓 Sistem"], ["acik", "☀️ Açık"], ["koyu", "🌙 Koyu"]]
-      .map(([k, l]) => `<a href="#" data-tema="${k}"${t === k ? ` class="on"` : ""}>${l}</a>`).join("") +
-    `</div><p class="hint">Sistem: telefonunuzun ya da bilgisayarınızın ayarını izler.</p></section>` +
     `<section class="card links">` +
     link("#", "📤", "Siteyi arkadaşlarınla paylaş", ` data-paylas`) +
     link("https://www.linkedin.com/in/birolabanuzoglu", "💼", "LinkedIn: linkedin.com/in/birolabanuzoglu", ` target="_blank" rel="noopener"`) +
@@ -1418,11 +1499,6 @@ function showAbout() {
     link("https://github.com/birolabanuzoglu/resmi-gazete-ozet/blob/main/GIZLILIK.md", "🛡️", "Gizlilik ve KVKK", ` target="_blank" rel="noopener"`) +
     link("https://github.com/birolabanuzoglu/resmi-gazete-ozet#telif-ve-kullan%C4%B1m", "©️", "Telif ve kullanım", ` target="_blank" rel="noopener"`) +
     `</section><p class="note ab-foot">Özet RG · Web sitesi · © 2026 · Simgeler: Material Icons (Apache 2.0)</p>`;
-  $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
-    e.preventDefault();
-    setTheme(a.dataset.tema);
-    $app.querySelectorAll("[data-tema]").forEach(x => x.classList.toggle("on", x === a));
-  }));
   $app.querySelector("[data-paylas]").addEventListener("click", async e => {
     e.preventDefault();
     const url = new URL("./", location.href).href;
@@ -1431,6 +1507,76 @@ function showAbout() {
   });
   setMeta("Hakkında | Özet RG", "Özet RG'yi kim, neden ve nasıl hazırlıyor.", "?hakkinda");
 }
+
+// ------------------------------------------------------------------ sayfa içi arama (uygulamadaki "Ara")
+
+let findState = { hits: [], cur: -1 };
+function closeFind() {
+  const bar = document.querySelector(".site-find");
+  if (bar) bar.remove();
+  clearFindMarks();
+}
+function clearFindMarks() {
+  $app.querySelectorAll("mark.pg").forEach(m => { m.replaceWith(document.createTextNode(m.textContent)); });
+  $app.normalize();
+  findState = { hits: [], cur: -1 };
+}
+function openFind() {
+  if (document.querySelector(".site-find")) { document.querySelector(".site-find input").focus(); return; }
+  document.querySelector("header.site-top").insertAdjacentHTML("afterend", `<div class="site-find"><div class="sf-box">${ic("search")}<input type="search" placeholder="Bu sayfada ara…" autocomplete="off" enterkeyhint="search"><span class="sf-cnt"></span><button type="button" class="sf-x" aria-label="Temizle" hidden>${ic("close")}</button></div><button type="button" class="sf-b" data-prev aria-label="Önceki">${ic("expand").replace("<svg", '<svg style="transform:rotate(180deg)"')}</button><button type="button" class="sf-b" data-next aria-label="Sonraki">${ic("expand")}</button><button type="button" class="sf-b" data-close aria-label="Kapat">${ic("close")}</button></div>`);
+  const bar = document.querySelector(".site-find"), input = bar.querySelector("input"), cnt = bar.querySelector(".sf-cnt"), clr = bar.querySelector(".sf-x");
+  const go = d => {
+    if (!findState.hits.length) return;
+    findState.cur = (findState.cur + d + findState.hits.length) % findState.hits.length;
+    findState.hits.forEach((m, i) => m.classList.toggle("cur", i === findState.cur));
+    const m = findState.hits[findState.cur];
+    const det = m.closest("details"); if (det) det.open = true;
+    m.scrollIntoView({ block: "center", behavior: "smooth" });
+    cnt.textContent = `${findState.cur + 1}/${findState.hits.length}`;
+  };
+  const run = () => {
+    clearFindMarks();
+    const q = input.value.trim();
+    clr.hidden = !q;
+    if (!q) { cnt.textContent = ""; return; }
+    const words = q.split(/\s+/).map(trPattern).join("[^\\p{L}\\p{N}]+");
+    const re = new RegExp(words, "giu");
+    const walker = document.createTreeWalker($app, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest("svg,script,style,.site-find") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      const text = node.nodeValue; re.lastIndex = 0;
+      if (!re.test(text)) continue;
+      re.lastIndex = 0;
+      const frag = document.createDocumentFragment(); let last = 0, mm;
+      while ((mm = re.exec(text))) {
+        if (!mm[0]) { re.lastIndex++; continue; }
+        frag.append(text.slice(last, mm.index));
+        const mk = document.createElement("mark"); mk.className = "pg"; mk.textContent = mm[0]; frag.append(mk);
+        last = mm.index + mm[0].length;
+      }
+      frag.append(text.slice(last)); node.replaceWith(frag);
+    }
+    findState.hits = [...$app.querySelectorAll("mark.pg")]; findState.cur = -1;
+    if (!findState.hits.length) { cnt.textContent = "Yok"; return; }
+    go(1);
+  };
+  let t = 0;
+  input.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 180); });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); if (e.shiftKey) go(-1); else go(1); } if (e.key === "Escape") closeFind(); });
+  clr.addEventListener("click", () => { input.value = ""; run(); input.focus(); });
+  bar.querySelector("[data-next]").addEventListener("click", () => go(1));
+  bar.querySelector("[data-prev]").addEventListener("click", () => go(-1));
+  bar.querySelector("[data-close]").addEventListener("click", closeFind);
+  input.focus();
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("#ara-btn");
+  if (!a) return;
+  // Özet sayfasındayken "Ara" sayfa içinde arar; diğer ekranlarda tüm özetlerde aranır
+  if (document.querySelector("#app .hero") && CURP && new URLSearchParams(location.search).has("gun") || (document.querySelector("#app .hero") && CURP && !location.search)) {
+    e.preventDefault(); e.stopPropagation(); openFind();
+  }
+}, true);
 
 // ------------------------------------------------------------------ genel
 
@@ -1455,6 +1601,7 @@ function toast(text) {
 let lastSearch = null;
 async function route() {
   lastSearch = location.search;
+  closeFind();
   if (window.speechSynthesis) speechSynthesis.cancel();
   const q = new URLSearchParams(location.search);
   $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar") || q.has("takvim") || q.has("bulten"));

@@ -217,3 +217,29 @@ html.dark .sbtn.alt{box-shadow:inset 0 0 0 1px #3D2F5C}
   body.printing-note .note-doc{color:#000}
   body.printing-note .item .body, body.printing-note .cmp-row{break-inside:avoid}
 }
+
+/* Sayfa ici arama cubugu */
+.site-find{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:6px;max-width:640px;margin:0 auto;padding:8px 14px;background:linear-gradient(180deg,#971519,#8E1318)}
+html.dark .site-find{background:#5E1012}
+.sf-box{flex:1;min-width:0;display:flex;align-items:center;gap:7px;height:42px;padding:0 8px 0 12px;border-radius:99px;background:#1E1D1F;color:#fff}
+.sf-box svg.i{font-size:19px;opacity:.8}
+.sf-box input{flex:1;min-width:0;height:100%;border:0;outline:0;background:transparent;color:#fff;font:inherit;font-size:15px}
+.sf-cnt{font-size:12.5px;font-weight:800;opacity:.85;white-space:nowrap}
+.sf-x{border:0;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.16);cursor:pointer;padding:0}
+.sf-x[hidden]{display:none}
+.sf-b{flex:none;width:40px;height:40px;border:0;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);cursor:pointer;padding:0}
+.sf-b svg.i{font-size:22px}
+mark.pg{background:#FFE14D;color:#1F1A17;box-shadow:2px 0 0 #FFE14D,-2px 0 0 #FFE14D;border-radius:3px}
+mark.pg.cur{background:#FF9100;box-shadow:2px 0 0 #FF9100,-2px 0 0 #FF9100}
+/* Atamalar: unvan secici ve paylas */
+.site-ata-f{border:0;font:inherit;cursor:pointer}
+button.ata-u{font:inherit;border:0;cursor:pointer}
+.ata-share{display:block;width:100%;margin:10px 0 4px;padding:11px;border:0;border-radius:14px;font:inherit;font-weight:800;color:#9A3412;background:#FFEDD5;box-shadow:inset 0 0 0 1px #FDBA74;cursor:pointer}
+.ata-share small{display:block;font-size:11.5px;font-weight:600;color:#B4532A}
+html.dark .ata-share{color:#FFB27A;background:#3E2716;box-shadow:inset 0 0 0 1px #6B3F1F}
+.ata-unote{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 8px;padding:7px 11px;border-radius:12px;background:#FFF4EC;color:#9A3412;font-size:12.5px;font-weight:700}
+.ata-unote button{border:0;font:inherit;font-weight:800;color:#C2410C;background:transparent;cursor:pointer}
+.fchip b.n{margin-left:6px;padding:0 6px;border-radius:9px;background:rgba(0,0,0,.08);font-size:11px}
+.site-aud{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;align-items:center}
+.site-aud .aud-k{width:100%}
+.aud-c.on{color:#fff;background:#075E6E;box-shadow:none}
