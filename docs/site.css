@@ -133,3 +133,8 @@ html.dark .dcal{background:#262A30}
   box-shadow:0 8px 20px rgba(0,0,0,.25);transition:opacity .2s,transform .2s}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 html.dark .toast{background:#E8EAED;color:#121417}
+
+/* Araclar: yazi boyutu secici dort kademe */
+.seg.site-fs{grid-template-columns:repeat(4,1fr)}
+.seg.site-fs a{padding:6px 2px;min-width:0}
+.fltnote{margin:12px 0 4px}

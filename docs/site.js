@@ -741,7 +741,7 @@ async function showList(q, tur) {
     `<form class="srch" role="search">${ic("search")}<input type="search" name="ara" placeholder="Tüm özetlerde ara… (ör. ikamet izni, rektör)" value="${esc(q)}" autocomplete="off" enterkeyhint="search">` +
     `<button type="submit">Ara</button></form>` +
     `<div class="lst-chips">` +
-    [["", "Tümü"], ["personel", "👤 Personel"], ["gunluk", "📰 Günlük"], ["arsiv", "🗄️ Arşiv"]].map(([v, t]) =>
+    [["", "Tümü"], ["gunluk", "📰 Günlük"], ["arsiv", "🗄️ Arşiv"]].map(([v, t]) =>
       `<a class="fchip${tur === v ? " on" : ""}" href="?gecmis${v ? `&tur=${v}` : ""}${q ? `&ara=${encodeURIComponent(q)}` : ""}" data-nav data-keep>${t}</a>`).join("") +
     `<label class="fchip date" id="tarih">${ic("cal")}Tarih seç<input type="date" min="2000-01-01" max="${isoOf(today)}"></label></div>` +
     `<div class="arsiv-bar"><div><span>🗄️ <b>Arşiv</b> · 2020'den bu yana</span><span>${sayi(done)} / ${sayi(total)} gün</span></div>` +
@@ -781,12 +781,12 @@ function renderDays(q, tur) {
   let days = INDEX.tarihler.slice().sort().reverse();
   if (tur === "arsiv") days = days.filter(k => arch.has(k));
   else if (tur === "gunluk") days = days.filter(k => !arch.has(k));
-  else if (tur === "personel") days = days.filter(k => PARTS[k] && PARTS[k].personel);
+  if (pref("personel") === "1") days = days.filter(k => PARTS[k] && PARTS[k].personel);
   const toks = q ? queryTokens(q) : [];
   if (toks.length) days = days.filter(k => PARTS[k] && toks.every(t => (PARTS[k].metin || "").includes(t)));
   const perMonth = {};
   for (const k of days) perMonth[k.slice(0, 6)] = (perMonth[k.slice(0, 6)] || 0) + 1;
-  let s = "";
+  let s = pref("personel") === "1" ? `<a class="card web fltnote" href="?araclar" data-nav>${ic("person")}<span><b>Sadece Personel açık</b><small>Yalnızca kamu personeline ilişkin düzenleme olan günler · Araçlar'dan değiştir</small></span>${ic("chev")}</a>` : "";
   if (q) {
     s += `<p class="res">${days.length ? `<b>“${esc(q)}”</b> ${sayi(days.length)} günün özetinde geçiyor` : `<b>“${esc(q)}”</b> için özet bulunamadı`}</p>`;
     if (!days.length) {
@@ -816,6 +816,39 @@ function renderDays(q, tur) {
   }
   if (month) s += `</div>`;
   box.innerHTML = s;
+}
+
+// ------------------------------------------------------------------ tercihler ve Araçlar (uygulamadaki Araçlar ve Ayarlar'ın web uyarlaması)
+
+const pref = (k, d = "") => { try { const v = localStorage.getItem("ayar_" + k); return v === null ? d : v; } catch (e) { return d; } };
+const setPref = (k, v) => { try { localStorage.setItem("ayar_" + k, v); } catch (e) { /* gizli sekme */ } };
+const FONTS = [["0.92", "Küçük"], ["1", "Normal"], ["1.12", "Büyük"], ["1.26", "Çok büyük"]];
+function applyFont() { $app.style.zoom = pref("yazi", "1"); }
+
+function showTools() {
+  const t = theme(), f = pref("yazi", "1");
+  const pers = pref("personel") === "1";
+  $app.innerHTML = `<a class="back" href="./" data-nav>${ic("arrow")}Özete dön</a>` +
+    `<div class="tl-head"><span class="ic">${ic("list")}</span><div><h1>Araçlar ve Ayarlar</h1><p>Görünüm, yazı boyutu ve süzgeçler</p></div></div>` +
+    `<section class="card sec ab-theme"><h2><span class="ic">${ic("moon")}</span>Görünüm</h2><div class="seg">` +
+    [["sistem", "🌓 Sistem"], ["acik", "☀️ Açık"], ["koyu", "🌙 Koyu"]].map(([k, l]) => `<a href="#" data-tema="${k}"${t === k ? ` class="on"` : ""}>${l}</a>`).join("") +
+    `</div><p class="hint">Sistem: cihazınızın ayarını izler.</p></section>` +
+    `<section class="card sec"><h2><span class="ic">${ic("doc")}</span>Yazı boyutu</h2><div class="seg site-fs">` +
+    FONTS.map(([k, l]) => `<a href="#" data-yazi="${k}"${f === k ? ` class="on"` : ""} style="font-size:${13 * +k}px">${l}</a>`).join("") +
+    `</div><p class="hint">Özet sayfaları bu boyutla gösterilir.</p></section>` +
+    `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
+    `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
+    `<p class="hint">Açıkken Geçmiş listesinde ve aramada yalnızca kamu personeline ilişkin düzenleme olan günler görünür.</p></section>`;
+  $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault(); setTheme(a.dataset.tema);
+    $app.querySelectorAll("[data-tema]").forEach(x => x.classList.toggle("on", x === a));
+  }));
+  $app.querySelectorAll("[data-yazi]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault(); setPref("yazi", a.dataset.yazi); applyFont();
+    $app.querySelectorAll("[data-yazi]").forEach(x => x.classList.toggle("on", x === a));
+  }));
+  $app.querySelector("[data-flt=personel]").addEventListener("click", e => { e.preventDefault(); setPref("personel", pers ? "0" : "1"); showTools(); });
+  setMeta("Araçlar ve Ayarlar | Özet RG", "Görünüm, yazı boyutu ve süzgeçler.", "?araclar");
 }
 
 // ------------------------------------------------------------------ hakkında (uygulamadaki Hakkında ile aynı)
@@ -887,8 +920,10 @@ async function route() {
   lastSearch = location.search;
   if (window.speechSynthesis) speechSynthesis.cancel();
   const q = new URLSearchParams(location.search);
-  $app.classList.toggle("about", q.has("hakkinda"));
+  $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar"));
+  applyFont();
   if (q.has("hakkinda")) { showAbout(); return; }
+  if (q.has("araclar")) { showTools(); return; }
   try { await loadIndex(); } catch (e) { return showError(e, route); }
   if (q.has("gun")) await showDay(normKey(q.get("gun")), (q.get("ara") || "").trim());
   else if (q.has("gecmis") || q.has("ara") || q.has("tur")) await showList((q.get("ara") || "").trim(), q.get("tur") || "");
