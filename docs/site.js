@@ -838,7 +838,8 @@ function showTools() {
     `</div><p class="hint">Özet sayfaları bu boyutla gösterilir.</p></section>` +
     `<section class="card sec tl-filter"><h2><span class="ic">${ic("list")}</span><span class="t">Süzgeçler<small>Açıp kapatın; seçimler bu tarayıcıda saklanır</small></span></h2>` +
     `<div class="flt-grid"><a href="#" data-flt="personel" class="${pers ? "on" : ""}" style="--fc:#0B6B63"><span class="e">👤</span><span class="l">Sadece Personel<small>Geçmiş ve arama</small></span>${pers ? `<span class="ok">✓</span>` : ""}</a></div>` +
-    `<p class="hint">Açıkken Geçmiş listesinde ve aramada yalnızca kamu personeline ilişkin düzenleme olan günler görünür.</p></section>`;
+    `<p class="hint">Açıkken Geçmiş listesinde, aramada ve Yürürlük Takvimi'nde yalnızca kamu personeline ilişkin düzenlemeler görünür.</p></section>` +
+    `<section class="card links"><a href="?takvim" data-nav><span class="e">📅</span><span class="l">Yürürlük Takvimi</span><span class="go">›</span></a></section>`;
   $app.querySelectorAll("[data-tema]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault(); setTheme(a.dataset.tema);
     $app.querySelectorAll("[data-tema]").forEach(x => x.classList.toggle("on", x === a));
@@ -849,6 +850,76 @@ function showTools() {
   }));
   $app.querySelector("[data-flt=personel]").addEventListener("click", e => { e.preventDefault(); setPref("personel", pers ? "0" : "1"); showTools(); });
   setMeta("Araçlar ve Ayarlar | Özet RG", "Görünüm, yazı boyutu ve süzgeçler.", "?araclar");
+}
+
+
+// ------------------------------------------------------------------ Yürürlük Takvimi
+
+const TR_AY = Object.fromEntries(AYLAR.map((a, i) => [low(a), i + 1]));
+/** "1 Ocak 2027" (ya da metin içinde geçen ilk tarih) → "20270101" */
+function parseTrDate(txt) {
+  const t = low(txt);
+  const n = t.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (n) return `${n[3]}${n[2].padStart(2, "0")}${n[1].padStart(2, "0")}`;
+  const m = t.match(/(\d{1,2})\s+(ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık)\s+(\d{4})/);
+  return m ? `${m[3]}${String(TR_AY[m[2]]).padStart(2, "0")}${m[1].padStart(2, "0")}` : "";
+}
+const todayKey = () => keyOf(Date.now() + 3 * 3600e3);
+const daysBetween = (a, b) => Math.round((tsOf(b) - tsOf(a)) / 864e5);
+
+function icsOf(title, k) {
+  const d = n => keyOf(tsOf(k) + n * 864e5);
+  const esc2 = t => t.replace(/[\;,]/g, m => "\\" + m);
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Özet RG//TR", "BEGIN:VEVENT",
+    `UID:${k}-${Math.abs([...title].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7))}@ozetrg`,
+    `DTSTAMP:${todayKey()}T000000Z`, `DTSTART;VALUE=DATE:${k}`, `DTEND;VALUE=DATE:${d(1)}`,
+    `SUMMARY:${esc2("Yürürlük: " + title)}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+}
+
+async function showCalendar() {
+  loading("Yürürlük tarihleri taranıyor…");
+  try { await loadIndex(); } catch (e) { return showError(e, showCalendar); }
+  const today = todayKey();
+  const days = INDEX.tarihler.slice().sort().reverse().slice(0, 60);
+  const found = [];
+  await Promise.all(days.map(async k => {
+    let html;
+    try { html = await loadDay(k); } catch (e) { return; }
+    const d = parse(html);
+    for (const sec of d.sections) if (sec.kind === "mad") for (const g of groupsOf(sec.nodes)) for (const it of g.items) {
+      const p = itemParts(it);
+      const at = parseTrDate(p.yur);
+      if (at && at >= today) found.push({ at, day: k, title: it.title, kind: g.kind, kurum: p.kurum, pers: p.aud.length > 0, href: it.href });
+    }
+  }));
+  found.sort((a, b) => a.at.localeCompare(b.at) || a.title.localeCompare(b.title, "tr"));
+  const only = pref("personel") === "1";
+  const list = only ? found.filter(x => x.pers) : found;
+  let s = `<a class="back" href="./" data-nav>${ic("arrow")}Özete dön</a><section class="card hero cal-hero"><div class="kicker">YÜRÜRLÜK TAKVİMİ</div>` +
+    `<h1>Yürürlüğe girecek düzenlemeler</h1><div class="sub">Son ${days.length} günün özetlerinde yürürlük tarihi ileride olanlar${only ? " · 👤 yalnızca personel" : ""}</div></section>`;
+  if (!list.length) s += `<section class="card cal-empty"><div class="big">📅</div><p><b>Yaklaşan yürürlük tarihi yok</b></p><p>Son günlerin özetlerinde ileri tarihli yürürlük bulunmuyor${only ? " (Sadece Personel açık; Araçlar'dan kapatabilirsiniz)" : ""}.</p></section>`;
+  let month = "";
+  for (const x of list) {
+    const m = x.at.slice(0, 6);
+    if (m !== month) { month = m; s += `<div class="cal-month">${monOf(x.at)} ${x.at.slice(0, 4)}</div>`; }
+    const left = daysBetween(today, x.at);
+    const due = left === 0 ? `<span class="due now">Bugün</span>` : left === 1 ? `<span class="due now">Yarın</span>` : `<span class="due${left <= 7 ? " soon" : ""}">${left} gün kaldı</span>`;
+    s += `<article class="card up k-${x.kind}${x.pers ? " pers" : ""}"><div class="up-date"><span>${mon3(x.at)}</span><b>${dayOf(x.at)}</b><small>${wdOf(x.at).slice(0, 3)}</small></div>` +
+      `<div class="up-body"><div class="up-chips">${due}${x.pers ? `<span class="tagp">${ic("person")}Personel</span>` : ""}</div><h4>${esc(x.title)}</h4>` +
+      `<div class="up-src">${x.kurum ? esc(x.kurum) + " · " : ""}${longOf(x.day)} sayısı</div><div class="up-acts">` +
+      `<a href="${dayUrl(x.day)}" data-nav>${ic("arrow")}Özete git</a><a class="rem" href="#" data-ics="${esc(x.at + "|" + x.title)}">${ic("cal")}Takvime ekle</a></div></div></article>`;
+  }
+  $app.innerHTML = s;
+  $app.querySelectorAll("[data-ics]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    const [at, ...rest] = a.dataset.ics.split("|");
+    const url = URL.createObjectURL(new Blob([icsOf(rest.join("|"), at)], { type: "text/calendar" }));
+    const dl = document.createElement("a");
+    dl.href = url; dl.download = `yururluk-${at}.ics`; document.body.append(dl); dl.click(); dl.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast("Takvim dosyası indirildi");
+  }));
+  setMeta("Yürürlük Takvimi | Özet RG", "Yürürlüğe girecek düzenlemelerin takvimi.", "?takvim");
 }
 
 // ------------------------------------------------------------------ hakkında (uygulamadaki Hakkında ile aynı)
@@ -920,10 +991,11 @@ async function route() {
   lastSearch = location.search;
   if (window.speechSynthesis) speechSynthesis.cancel();
   const q = new URLSearchParams(location.search);
-  $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar"));
+  $app.classList.toggle("about", q.has("hakkinda") || q.has("araclar") || q.has("takvim"));
   applyFont();
   if (q.has("hakkinda")) { showAbout(); return; }
   if (q.has("araclar")) { showTools(); return; }
+  if (q.has("takvim")) { await showCalendar(); return; }
   try { await loadIndex(); } catch (e) { return showError(e, route); }
   if (q.has("gun")) await showDay(normKey(q.get("gun")), (q.get("ara") || "").trim());
   else if (q.has("gecmis") || q.has("ara") || q.has("tur")) await showList((q.get("ara") || "").trim(), q.get("tur") || "");
