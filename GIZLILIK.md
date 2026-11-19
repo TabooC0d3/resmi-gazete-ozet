@@ -50,7 +50,7 @@ bir dosya olarak indirir. Tarayıcı verilerini silerseniz bunlar da silinir. Si
 uygulamayla aynı adresten (`raw.githubusercontent.com`) okur; sayfayı açtığınızda IP adresiniz ve
 tarayıcı bilgileriniz GitHub tarafından teknik olarak görülebilir (GitHub Gizlilik Bildirimi
 geçerlidir). Arama yalnızca tarayıcınızda yapılır, aranan kelime hiçbir yere gönderilmez.
-"Dinle" düğmesi tarayıcınızın sesli okuma özelliğini kullanır; bazı tarayıcılarda okunan metin
+"AI'ya Sor" yalnızca siz "ChatGPT'de Aç" ya da "İstemi kopyala / Paylaş" düğmesine basınca çalışır: hazırlanan istem (seçtiğiniz madde ve yazdığınız soru) panoya kopyalanır ve ChatGPT sitesi (chatgpt.com) yeni sekmede açılır; bu site tarafından hiçbir şey bir sunucuya gönderilmez. "Bilgi Notu" tarayıcınızda hazırlanır ve yazdırma penceresinden PDF olarak kaydedilir. "Dinle" düğmesi tarayıcınızın sesli okuma özelliğini kullanır; bazı tarayıcılarda okunan metin
 (yalnızca özet) tarayıcı üreticisinin sunucusunda seslendirilir.
 
 ### Cihazda tutulan bilgiler
@@ -174,7 +174,7 @@ words, and the items and notes you save. "Yedek indir" (download backup) saves t
 computer as a file. If you clear your browser data they are deleted. The site reads the summaries and the search index from the same
 address as the app (`raw.githubusercontent.com`); when you open a page, your IP address and
 browser details are technically visible to GitHub (the GitHub General Privacy Statement applies).
-Search runs entirely in your browser; your search words are not sent anywhere. The "Dinle"
+Search runs entirely in your browser; your search words are not sent anywhere. "AI'ya Sor" (ask AI) works only when you press "ChatGPT'de Aç" or "İstemi kopyala / Paylaş": the prompt (the item you chose and the question you typed) is copied to your clipboard and the ChatGPT website (chatgpt.com) opens in a new tab; this site sends nothing to any server. "Bilgi Notu" (information note) is prepared in your browser and saved as PDF through the print dialog. The "Dinle"
 (listen) button uses your browser's speech feature; in some browsers the text read aloud (the
 summary only) is synthesised on the browser vendor's servers.
 
