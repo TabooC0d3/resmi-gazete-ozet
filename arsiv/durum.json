@@ -1,7 +1,8 @@
 {
  "gunler": {
   "20210101": {
-   "deneme": 1,
+   "deneme": 5,
+   "hata": "sayı bulunamadı",
    "son": "2026-11-22 20:48"
   },
   "20260917": {
